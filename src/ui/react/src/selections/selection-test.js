@@ -4,13 +4,23 @@
     var linkSelectionTest = function(payload) {
         var nativeEditor = payload.editor.get('nativeEditor');
 
-        return !nativeEditor.isSelectionEmpty() && (new CKEDITOR.Link(nativeEditor).getFromSelection());
+        var element;
+
+        return !!(
+            nativeEditor.isSelectionEmpty() &&
+            (element = (new CKEDITOR.Link(nativeEditor)).getFromSelection()) &&
+            !element.isReadOnly()
+        );
     };
 
     var imageSelectionTest = function(payload) {
         var selectionData = payload.data.selectionData;
 
-        return (selectionData.element && selectionData.element.getName() === 'img');
+        return !!(
+            selectionData.element &&
+            selectionData.element.getName() === 'img' &&
+            !selectionData.element.isReadOnly()
+        );
     };
 
     var textSelectionTest = function(payload) {
@@ -20,13 +30,21 @@
 
         var selectionData = payload.data.selectionData;
 
-        return (!selectionData.element && selectionData.region && !selectionEmpty);
+        return !!(
+            !selectionData.element &&
+            selectionData.region &&
+            !selectionEmpty &&
+            !nativeEditor.getSelection().getCommonAncestor().isReadOnly()
+        );
     };
 
     var tableSelectionTest = function(payload) {
         var nativeEditor = payload.editor.get('nativeEditor');
 
-        return !!(new CKEDITOR.Table(nativeEditor).getFromSelection());
+        var table = new CKEDITOR.Table(nativeEditor);
+        var element = table.getFromSelection();
+
+        return !!(element && table.isEditable(element));
     };
 
     AlloyEditor.SelectionTest = {

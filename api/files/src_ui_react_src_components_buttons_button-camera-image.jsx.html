@@ -31,7 +31,7 @@
                 <li class="divider-vertical"></li>
                 <li>
                     <p class="navbar-text">
-                        API Docs for Version: <b>0.4.2</b>
+                        API Docs for Version: <b>0.7.0</b>
                     </p>
                 </li>
             </div>
@@ -72,11 +72,13 @@
                                     <li><a href="../classes/ButtonH2.html">ButtonH2</a></li>
                                     <li><a href="../classes/ButtonHline.html">ButtonHline</a></li>
                                     <li><a href="../classes/ButtonImage.html">ButtonImage</a></li>
+                                    <li><a href="../classes/ButtonImageAlignCenter.html">ButtonImageAlignCenter</a></li>
                                     <li><a href="../classes/ButtonImageAlignLeft.html">ButtonImageAlignLeft</a></li>
                                     <li><a href="../classes/ButtonImageAlignRight.html">ButtonImageAlignRight</a></li>
                                     <li><a href="../classes/ButtonItalic.html">ButtonItalic</a></li>
                                     <li><a href="../classes/ButtonLink.html">ButtonLink</a></li>
                                     <li><a href="../classes/ButtonLinkEdit.html">ButtonLinkEdit</a></li>
+                                    <li><a href="../classes/ButtonLinkTargetEdit.html">ButtonLinkTargetEdit</a></li>
                                     <li><a href="../classes/ButtonOrderedList.html">ButtonOrderedList</a></li>
                                     <li><a href="../classes/ButtonParagraphAlignLeft.html">ButtonParagraphAlignLeft</a></li>
                                     <li><a href="../classes/ButtonParagraphAlignRight.html">ButtonParagraphAlignRight</a></li>
@@ -209,7 +211,7 @@
                                      * @method componentDidMount
                                      */
                                     componentDidMount: function () {
-                                        React.findDOMNode(this.refs.buttonTakePhoto).focus();
+                                        ReactDOM.findDOMNode(this.refs.buttonTakePhoto).focus();
                                     },
                             
                                     /**
@@ -256,8 +258,8 @@
                                      * @method takePhoto
                                      */
                                     takePhoto: function() {
-                                        var videoEl = React.findDOMNode(this.refs.videoContainer);
-                                        var canvasEl = React.findDOMNode(this.refs.canvasContainer);
+                                        var videoEl = ReactDOM.findDOMNode(this.refs.videoContainer);
+                                        var canvasEl = ReactDOM.findDOMNode(this.refs.canvasContainer);
                             
                                         var context = canvasEl.getContext(&#x27;2d&#x27;);
                             
@@ -305,8 +307,8 @@
                                      * @param {Object} stream The video stream
                                      */
                                     _handleStreamSuccess: function(stream) {
-                                        var videoEl = React.findDOMNode(this.refs.videoContainer);
-                                        var canvasEl = React.findDOMNode(this.refs.canvasContainer);
+                                        var videoEl = ReactDOM.findDOMNode(this.refs.videoContainer);
+                                        var canvasEl = ReactDOM.findDOMNode(this.refs.canvasContainer);
                             
                                         videoEl.addEventListener(&#x27;canplay&#x27;, function(event) {
                                             var height = videoEl.videoHeight / (videoEl.videoWidth/this.props.videoWidth);
@@ -333,7 +335,7 @@
                             
                                         videoEl.play();
                             
-                                        React.findDOMNode(this.refs.buttonTakePhoto).disabled = false;
+                                        ReactDOM.findDOMNode(this.refs.buttonTakePhoto).disabled = false;
                                     }
                             
                                     /**

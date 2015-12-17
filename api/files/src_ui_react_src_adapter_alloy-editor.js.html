@@ -31,7 +31,7 @@
                 <li class="divider-vertical"></li>
                 <li>
                     <p class="navbar-text">
-                        API Docs for Version: <b>0.4.2</b>
+                        API Docs for Version: <b>0.7.0</b>
                     </p>
                 </li>
             </div>
@@ -72,11 +72,13 @@
                                     <li><a href="../classes/ButtonH2.html">ButtonH2</a></li>
                                     <li><a href="../classes/ButtonHline.html">ButtonHline</a></li>
                                     <li><a href="../classes/ButtonImage.html">ButtonImage</a></li>
+                                    <li><a href="../classes/ButtonImageAlignCenter.html">ButtonImageAlignCenter</a></li>
                                     <li><a href="../classes/ButtonImageAlignLeft.html">ButtonImageAlignLeft</a></li>
                                     <li><a href="../classes/ButtonImageAlignRight.html">ButtonImageAlignRight</a></li>
                                     <li><a href="../classes/ButtonItalic.html">ButtonItalic</a></li>
                                     <li><a href="../classes/ButtonLink.html">ButtonLink</a></li>
                                     <li><a href="../classes/ButtonLinkEdit.html">ButtonLinkEdit</a></li>
+                                    <li><a href="../classes/ButtonLinkTargetEdit.html">ButtonLinkTargetEdit</a></li>
                                     <li><a href="../classes/ButtonOrderedList.html">ButtonOrderedList</a></li>
                                     <li><a href="../classes/ButtonParagraphAlignLeft.html">ButtonParagraphAlignLeft</a></li>
                                     <li><a href="../classes/ButtonParagraphAlignRight.html">ButtonParagraphAlignRight</a></li>
@@ -231,8 +233,10 @@
                                      * @method destructor
                                      */
                                     destructor: function() {
+                                        this._destroyed = true;
+                            
                                         if (this._editorUIElement) {
-                                            React.unmountComponentAtNode(this._editorUIElement);
+                                            ReactDOM.unmountComponentAtNode(this._editorUIElement);
                                             this._editorUIElement.parentNode.removeChild(this._editorUIElement);
                                         }
                             
@@ -242,6 +246,10 @@
                                             var editable = nativeEditor.editable();
                                             if (editable) {
                                                 editable.removeClass(&#x27;ae-editable&#x27;);
+                            
+                                                if (this.get(&#x27;enableContentEditable&#x27;)) {
+                                                    this.get(&#x27;srcNode&#x27;).setAttribute(&#x27;contenteditable&#x27;, &#x27;false&#x27;);
+                                                }
                                             }
                             
                                             nativeEditor.destroy();
@@ -266,22 +274,24 @@
                                      * @method _renderUI
                                      */
                                     _renderUI: function() {
-                                        var editorUIElement = document.createElement(&#x27;div&#x27;);
-                                        editorUIElement.className = &#x27;ae-ui&#x27;;
+                                        if (!this._destroyed) {
+                                            var editorUIElement = document.createElement(&#x27;div&#x27;);
+                                            editorUIElement.className = &#x27;ae-ui&#x27;;
                             
-                                        var uiNode = this.get(&#x27;uiNode&#x27;) || document.body;
+                                            var uiNode = this.get(&#x27;uiNode&#x27;) || document.body;
                             
-                                        uiNode.appendChild(editorUIElement);
+                                            uiNode.appendChild(editorUIElement);
                             
-                                        this._mainUI = React.render(React.createElement(AlloyEditor.UI, {
-                                            editor: this,
-                                            eventsDelay: this.get(&#x27;eventsDelay&#x27;),
-                                            toolbars: this.get(&#x27;toolbars&#x27;)
-                                        }), editorUIElement);
+                                            this._mainUI = ReactDOM.render(React.createElement(AlloyEditor.UI, {
+                                                editor: this,
+                                                eventsDelay: this.get(&#x27;eventsDelay&#x27;),
+                                                toolbars: this.get(&#x27;toolbars&#x27;)
+                                            }), editorUIElement);
                             
-                                        this._editorUIElement = editorUIElement;
+                                            this._editorUIElement = editorUIElement;
                             
-                                        this.get(&#x27;nativeEditor&#x27;).fire(&#x27;uiReady&#x27;);
+                                            this.get(&#x27;nativeEditor&#x27;).fire(&#x27;uiReady&#x27;);
+                                        }
                                     },
                             
                                     /**

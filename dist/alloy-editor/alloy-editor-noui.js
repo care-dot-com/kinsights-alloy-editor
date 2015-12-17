@@ -1,5 +1,3 @@
-'use strict';
-
 (function () {
     'use strict';
 
@@ -23,10 +21,11 @@
      * @param {Object} context The context in which the callback will be called. This argument is optional.
      * @param {Array} args An array of arguments which the callback will receive.
      */
+
     CKEDITOR.tools.debounce = CKEDITOR.tools.debounce || function (callback, timeout, context, args) {
         var debounceHandle;
 
-        var callFn = function callFn() {
+        var callFn = function () {
             var callContext = context || this;
 
             clearTimeout(debounceHandle);
@@ -51,8 +50,6 @@
         return callFn;
     };
 })();
-'use strict';
-
 (function () {
     'use strict';
 
@@ -80,7 +77,7 @@
          * @param {String} URI The URI of the link.
          * @param {Object} attrs A config object with link attributes. These might be arbitrary DOM attributes.
          */
-        create: function create(URI, attrs) {
+        create: function (URI, attrs) {
             var selection = this._editor.getSelection();
 
             var range = selection.getRanges()[0];
@@ -114,7 +111,7 @@
          * @method getFromSelection
          * @return {CKEDITOR.dom.element} The retrieved link or null if not found.
          */
-        getFromSelection: function getFromSelection() {
+        getFromSelection: function () {
             var selection = this._editor.getSelection();
 
             var selectedElement = selection.getSelectedElement();
@@ -140,13 +137,13 @@
          * @param {CKEDITOR.dom.element} link The link element which link style should be removed.
          * @method remove
          */
-        remove: function remove(link) {
+        remove: function (link) {
             var editor = this._editor;
 
             if (link) {
                 link.remove(editor);
             } else {
-                var style = link || new CKEDITOR.style({
+                var style = new CKEDITOR.style({
                     alwaysRemoveElement: 1,
                     element: 'a',
                     type: CKEDITOR.STYLE_INLINE
@@ -167,16 +164,40 @@
          * Updates the href of an already existing link.
          *
          * @method update
-         * @param {String} URI The new URI of the link.
+         * @param {Object|String} attrs The attributes to update or remove. Attributes with null values will be removed.
          * @param {CKEDITOR.dom.element} link The link element which href should be removed.
          */
-        update: function update(URI, link) {
-            var style = link || this.getFromSelection();
+        update: function (attrs, link) {
+            link = link || this.getFromSelection();
 
-            style.setAttributes({
-                'data-cke-saved-href': URI,
-                href: URI
-            });
+            if (typeof attrs === 'string') {
+                link.setAttributes({
+                    'data-cke-saved-href': attrs,
+                    href: attrs
+                });
+            } else if (typeof attrs === 'object') {
+                var removeAttrs = [];
+                var setAttrs = {};
+
+                Object.keys(attrs).forEach(function (key) {
+                    if (attrs[key] === null) {
+                        if (key === 'href') {
+                            removeAttrs.push('data-cke-saved-href');
+                        }
+
+                        removeAttrs.push(key);
+                    } else {
+                        if (key === 'href') {
+                            setAttrs['data-cke-saved-href'] = attrs[key];
+                        }
+
+                        setAttrs[key] = attrs[key];
+                    }
+                });
+
+                link.removeAttributes(removeAttrs);
+                link.setAttributes(setAttrs);
+            }
         },
 
         /**
@@ -188,7 +209,7 @@
          * @param {String} URI The URI of the link.
          * @return {String} The URI updated with the protocol.
          */
-        _getCompleteURI: function _getCompleteURI(URI) {
+        _getCompleteURI: function (URI) {
             if (!REGEX_URI_SCHEME.test(URI)) {
                 URI = 'http://' + URI;
             }
@@ -199,8 +220,6 @@
 
     CKEDITOR.Link = CKEDITOR.Link || Link;
 })();
-'use strict';
-
 (function () {
     'use strict';
 
@@ -234,7 +253,7 @@
          * @param {Number} x X point in page coordinates.
          * @param {Number} y Y point in page coordinates.
          */
-        createSelectionFromPoint: function createSelectionFromPoint(x, y) {
+        createSelectionFromPoint: function (x, y) {
             this.createSelectionFromRange(x, y, x, y);
         },
 
@@ -247,7 +266,7 @@
          * @param {Number} endX X coordinate of the second point.
          * @param {Number} endY Y coordinate of the second point.
          */
-        createSelectionFromRange: function createSelectionFromRange(startX, startY, endX, endY) {
+        createSelectionFromRange: function (startX, startY, endX, endY) {
             var end;
             var endContainer;
             var endOffset;
@@ -313,10 +332,22 @@
          * - right
          * - top
          */
-        getCaretRegion: function getCaretRegion() {
+        getCaretRegion: function () {
             var selection = this.getSelection();
 
+            var region = {
+                bottom: 0,
+                left: 0,
+                right: 0,
+                top: 0
+            };
+
             var bookmarks = selection.createBookmarks();
+
+            if (!bookmarks.length) {
+                return region;
+            }
+
             var bookmarkNodeEl = bookmarks[0].startNode.$;
 
             bookmarkNodeEl.style.display = 'inline-block';
@@ -327,12 +358,9 @@
 
             var scrollPos = new CKEDITOR.dom.window(window).getScrollPosition();
 
-            return {
-                bottom: scrollPos.y + region.bottom,
-                left: scrollPos.x + region.left,
-                right: scrollPos.x + region.right,
-                top: scrollPos.y + region.top
-            };
+            region.bottom = scrollPos.y + region.bottom, region.left = scrollPos.x + region.left, region.right = scrollPos.x + region.right, region.top = scrollPos.y + region.top;
+
+            return region;
         },
 
         /**
@@ -344,7 +372,7 @@
          * - text - The selected text
          * - region - The data, returned from {{#crossLink "CKEDITOR.plugins.ae_selectionregion/getSelectionRegion:method"}}{{/crossLink}}
          */
-        getSelectionData: function getSelectionData() {
+        getSelectionData: function () {
             var selection = this.getSelection();
 
             if (!selection.getNative()) {
@@ -373,7 +401,7 @@
          * - height - The height of the selection region
          * - width - The width of the selection region
          */
-        getSelectionRegion: function getSelectionRegion() {
+        getSelectionRegion: function () {
             var region = this.getClientRectsRegion();
 
             region.direction = this.getSelectionDirection();
@@ -390,7 +418,7 @@
          * @method isSelectionEmpty
          * @return {Boolean} Returns true if the current selection is empty, false otherwise.
          */
-        isSelectionEmpty: function isSelectionEmpty() {
+        isSelectionEmpty: function () {
             var ranges;
 
             var selection = this.getSelection();
@@ -425,7 +453,7 @@
          *
          * If there is no native selection, the objects will be filled with 0.
          */
-        getClientRectsRegion: function getClientRectsRegion() {
+        getClientRectsRegion: function () {
             var selection = this.getSelection();
             var nativeSelection = selection.getNative();
 
@@ -531,7 +559,7 @@
          * - CKEDITOR.SELECTION_TOP_TO_BOTTOM;
          * - CKEDITOR.SELECTION_BOTTOM_TO_TOP;
          */
-        getSelectionDirection: function getSelectionDirection() {
+        getSelectionDirection: function () {
             var direction = CKEDITOR.SELECTION_TOP_TO_BOTTOM;
             var selection = this.getSelection();
             var nativeSelection = selection.getNative();
@@ -562,7 +590,7 @@
          * @protected
          * @param {Object} editor The current CKEditor instance.
          */
-        init: function init(editor) {
+        init: function (editor) {
             var attr, hasOwnProperty;
 
             hasOwnProperty = Object.prototype.hasOwnProperty;
@@ -575,10 +603,20 @@
         }
     });
 })();
-'use strict';
-
 (function () {
     'use strict';
+
+    var IE_NON_DIRECTLY_EDITABLE_ELEMENT = {
+        'table': 1,
+        'col': 1,
+        'colgroup': 1,
+        'tbody': 1,
+        'td': 1,
+        'tfoot': 1,
+        'th': 1,
+        'thead': 1,
+        'tr': 1
+    };
 
     /**
      * Table class utility. Provides methods for create, delete and update tables.
@@ -607,7 +645,7 @@
          * @param {Object} config Table configuration object
          * @return {Object} The created table
          */
-        create: function create(config) {
+        create: function (config) {
             var editor = this._editor;
             var table = this._createElement('table');
 
@@ -647,7 +685,7 @@
          * @method getFromSelection
          * @return {CKEDITOR.dom.element} The retrieved table or null if not found.
          */
-        getFromSelection: function getFromSelection() {
+        getFromSelection: function () {
             var table;
             var selection = this._editor.getSelection();
             var selected = selection.getSelectedElement();
@@ -674,13 +712,38 @@
         },
 
         /**
+         * Checks if a given table can be considered as editable. This method
+         * workarounds a limitation of IE where for some elements (like table),
+         * `isContentEditable` returns always false. This is because IE does not support
+         * `contenteditable` on such elements. However, despite such elements
+         * cannot be set as content editable directly, a content editable SPAN,
+         * or DIV element can be placed inside the individual table cells.
+         * See https://msdn.microsoft.com/en-us/library/ms537837%28v=VS.85%29.aspx
+         *
+         * @method isEditable
+         * @param {CKEDITOR.dom.element} el The table element to test if editable
+         * @return {Boolean}
+         */
+        isEditable: function (el) {
+            if (!CKEDITOR.env.ie || !el.is(IE_NON_DIRECTLY_EDITABLE_ELEMENT)) {
+                return !el.isReadOnly();
+            }
+
+            if (el.hasAttribute('contenteditable')) {
+                return el.getAttribute('contenteditable') !== 'false';
+            }
+
+            return this.isEditable(el.getParent());
+        },
+
+        /**
          * Returns which heading style is set for the given table.
          *
          * @method getHeading
          * @param {CKEDITOR.dom.element} table The table to gather the heading from. If null, it will be retrieved from the current selection.
          * @return {String} The heading of the table. Expected values are `CKEDITOR.Table.NONE`, `CKEDITOR.Table.ROW`, `CKEDITOR.Table.COL` and `CKEDITOR.Table.BOTH`.
          */
-        getHeading: function getHeading(table) {
+        getHeading: function (table) {
             table = table || this.getFromSelection();
 
             if (!table) {
@@ -721,7 +784,7 @@
          * @method remove
          * @param {CKEDITOR.dom.element} table The table element which table style should be removed.
          */
-        remove: function remove(table) {
+        remove: function (table) {
             var editor = this._editor;
 
             if (table) {
@@ -753,7 +816,7 @@
          * @param {Object} table The table to which the attributes should be assigned
          * @param {Object} attrs The attributes which have to be assigned to the table
          */
-        setAttributes: function setAttributes(table, attrs) {
+        setAttributes: function (table, attrs) {
             if (attrs) {
                 Object.keys(attrs).forEach(function (attr) {
                     table.setAttribute(attr, attrs[attr]);
@@ -768,7 +831,7 @@
          * @param {CKEDITOR.dom.element} table The table element to which the heading should be set. If null, it will be retrieved from the current selection.
          * @param {String} heading The table heading to be set. Accepted values are: `CKEDITOR.Table.NONE`, `CKEDITOR.Table.ROW`, `CKEDITOR.Table.COL` and `CKEDITOR.Table.BOTH`.
          */
-        setHeading: function setHeading(table, heading) {
+        setHeading: function (table, heading) {
             table = table || this.getFromSelection();
 
             var i, newCell;
@@ -867,7 +930,7 @@
          * @param {String} name The tag name from which an element should be created
          * @return {CKEDITOR.dom.element} Instance of CKEDITOR DOM element class
          */
-        _createElement: function _createElement(name) {
+        _createElement: function (name) {
             return new CKEDITOR.dom.element(name, this._editor.document);
         }
     };
@@ -879,7 +942,7 @@
 
         headingCommands.forEach(function (heading) {
             event.editor.addCommand('tableHeading' + heading, {
-                exec: function exec(editor) {
+                exec: function (editor) {
                     tableUtils.setHeading(null, heading);
                 }
             });
@@ -888,8 +951,6 @@
 
     CKEDITOR.Table = CKEDITOR.Table || Table;
 })();
-'use strict';
-
 (function () {
     'use strict';
 
@@ -911,6 +972,7 @@
      * @param {Object} objects* One or more objects to merge.
      * @return {Object} A new merged object.
      */
+
     CKEDITOR.tools.merge = CKEDITOR.tools.merge || function () {
         var result = {};
 
@@ -941,8 +1003,6 @@
         element.dispatchEvent(eventInstance);
     };
 })();
-'use strict';
-
 (function () {
     'use strict';
 
@@ -1008,7 +1068,7 @@
          * @method init
          * @param {Object} editor The current CKEditor instance.
          */
-        init: function init(editor) {
+        init: function (editor) {
             var ariaState = [];
 
             var ariaElement = this._createAriaElement(editor.id);
@@ -1068,7 +1128,7 @@
          * @param {String} id The provided id of the element. It will be used as prefix for the final element Id.
          * @return {HTMLElement} The created and applied to DOM element.
          */
-        _createAriaElement: function _createAriaElement(id) {
+        _createAriaElement: function (id) {
             var statusElement = document.createElement('div');
 
             statusElement.className = 'ae-sr-only';
@@ -1083,8 +1143,6 @@
         }
     });
 })();
-'use strict';
-
 (function () {
     'use strict';
 
@@ -1116,7 +1174,7 @@
          * @method init
          * @param {Object} editor The current editor instance
          */
-        init: function init(editor) {
+        init: function (editor) {
             editor.once('contentDom', (function () {
                 var editable = editor.editable();
 
@@ -1147,7 +1205,7 @@
          * @param {Array} files Array of dropped files. Only the images from this list will be processed.
          * @param {Object} editor The current editor instance
          */
-        _handleFiles: function _handleFiles(files, editor) {
+        _handleFiles: function (files, editor) {
             for (var i = 0; i < files.length; i++) {
                 var file = files[i];
 
@@ -1166,7 +1224,7 @@
          * @method _onDragEnter
          * @param {DOM event} event dragenter event, as received natively from CKEditor
          */
-        _onDragEnter: function _onDragEnter(event) {
+        _onDragEnter: function (event) {
             if (isIE) {
                 this._preventEvent(event);
             }
@@ -1179,7 +1237,7 @@
          * @method _onDragOver
          * @param {DOM event} event dragover event, as received natively from CKEditor
          */
-        _onDragOver: function _onDragOver(event) {
+        _onDragOver: function (event) {
             if (isIE) {
                 this._preventEvent(event);
             }
@@ -1194,7 +1252,7 @@
          * @method _onDragDrop
          * @param {CKEDITOR.dom.event} event dragdrop event, as received natively from CKEditor
          */
-        _onDragDrop: function _onDragDrop(event) {
+        _onDragDrop: function (event) {
             var nativeEvent = event.data.$;
 
             new CKEDITOR.dom.event(nativeEvent).preventDefault();
@@ -1214,7 +1272,7 @@
          * @protected
          * @param {CKEDITOR.dom.event} event A `paste` event, as received natively from CKEditor
          */
-        _onPaste: function _onPaste(event) {
+        _onPaste: function (event) {
             if (event.data.$.clipboardData) {
                 var pastedData = event.data.$.clipboardData.items[0];
 
@@ -1233,7 +1291,7 @@
          * @method _preventEvent
          * @param {DOM event} event The event to be prevented.
          */
-        _preventEvent: function _preventEvent(event) {
+        _preventEvent: function (event) {
             event = new CKEDITOR.dom.event(event.data.$);
 
             event.preventDefault();
@@ -1248,7 +1306,7 @@
          * @method _preventEvent
          * @param {DOM event} event The event to be prevented.
          */
-        _processFile: function _processFile(file, editor) {
+        _processFile: function (file, editor) {
             var reader = new FileReader();
 
             reader.addEventListener('loadend', function () {
@@ -1270,8 +1328,6 @@
         }
     });
 })();
-'use strict';
-
 (function () {
     'use strict';
 
@@ -1316,7 +1372,7 @@
          * @method init
          * @param {Object} editor The current editor instance
          */
-        init: function init(editor) {
+        init: function (editor) {
             editor.once('contentDom', (function () {
                 var editable = editor.editable();
 
@@ -1334,7 +1390,7 @@
          * @method _getLastWord
          * @return {String} The last word introduced by user
          */
-        _getLastWord: function _getLastWord(editor) {
+        _getLastWord: function (editor) {
             var range = editor.getSelection().getRanges()[0];
 
             var offset = range.startOffset;
@@ -1398,7 +1454,7 @@
          * @param {String} link The link we want to know if it is a valid URL
          * @return {Boolean} Returns true if the link is a valid URL, false otherwise
          */
-        _isValidURL: function _isValidURL(link) {
+        _isValidURL: function (link) {
             return REGEX_URL.test(link);
         },
 
@@ -1410,7 +1466,7 @@
          * @method _onKeyDown
          * @param {EventFacade} event EventFacade object
          */
-        _onKeyDown: function _onKeyDown(event) {
+        _onKeyDown: function (event) {
             var nativeEvent = event.data.$;
 
             var editor = event.listenerData.editor;
@@ -1437,7 +1493,7 @@
          * @method _onKeyUp
          * @param {EventFacade} event EventFacade object
          */
-        _onKeyUp: function _onKeyUp(event) {
+        _onKeyUp: function (event) {
             var nativeEvent = event.data.$;
 
             this._currentKeyCode = nativeEvent.keyCode;
@@ -1460,7 +1516,7 @@
          * @method _replaceContentByLink
          * @param {String} content The text that has to be replaced by an link element
          */
-        _replaceContentByLink: function _replaceContentByLink(editor, content) {
+        _replaceContentByLink: function (editor, content) {
             var range = editor.createRange();
             var node = CKEDITOR.dom.element.get(this._startContainer);
             var offset = this._offset;
@@ -1473,6 +1529,9 @@
             var ckLink = new CKEDITOR.Link(editor);
             ckLink.create(content);
             this._ckLink = ckLink;
+
+            var linkNode = this._startContainer.getNext() || this._startContainer;
+            editor.fire('autolinkAdd', linkNode.getParent());
 
             this._subscribeToKeyEvent(editor);
 
@@ -1498,12 +1557,19 @@
         },
 
         /**
+         * Fired when a URL is detected in text and converted to a link.
+         *
+         * @event autolinkAdd
+         * @param {CKEDITOR.dom.element} el Node of the created link.
+         */
+
+        /**
          * Removes the created link element, and replaces it by its text.
          *
          * @protected
          * @method _removeLink
          */
-        _removeLink: function _removeLink(editor) {
+        _removeLink: function (editor) {
             var range = editor.getSelection().getRanges()[0];
             var caretOffset = range.startOffset;
 
@@ -1530,7 +1596,7 @@
          * @protected
          * @method _subscribeToKeyEvent
          */
-        _subscribeToKeyEvent: function _subscribeToKeyEvent(editor) {
+        _subscribeToKeyEvent: function (editor) {
             var editable = editor.editable();
 
             // Change the priority of keydown listener - 1 means the highest priority.
@@ -1550,18 +1616,16 @@
  * - Snap to size of other images in editor
  * - Escape while dragging cancels resize
  */
-'use strict';
-
 (function () {
     'use strict';
 
-    if (CKEDITOR.plugins.get('dragresize') || CKEDITOR.plugins.get('ae_dragresize')) {
+    if (CKEDITOR.plugins.get('ae_dragresize')) {
         return;
     }
 
     var IMAGE_SNAP_TO_SIZE = 7;
 
-    var isWebkit = ('WebkitAppearance' in document.documentElement.style);
+    var isWebkit = 'WebkitAppearance' in document.documentElement.style;
 
     if (isWebkit) {
         // CSS is added in a compressed form
@@ -1572,23 +1636,23 @@
      * Initializes the plugin
      */
     CKEDITOR.plugins.add('ae_dragresize', {
-        onLoad: function onLoad() {
+        onLoad: function () {
             if (!isWebkit) {
                 return;
             }
         },
-        init: function init(editor) {
+        init: function (editor) {
             if (!isWebkit) {
                 return;
             }
 
             editor.once('contentDom', function (evt) {
-                _init(editor);
+                init(editor);
             });
         }
     });
 
-    function _init(editor) {
+    function init(editor) {
         var window = editor.window.$,
             document = editor.document.$;
         var snapToSize = typeof IMAGE_SNAP_TO_SIZE === 'undefined' ? null : IMAGE_SNAP_TO_SIZE;
@@ -1665,7 +1729,7 @@
     }
 
     Resizer.prototype = {
-        init: function init() {
+        init: function () {
             var container = this.container = this.document.createElement('div');
             container.id = 'ckimgrsz';
             this.preview = this.document.createElement('span');
@@ -1684,19 +1748,19 @@
                 container.appendChild(handles[n]);
             }
         },
-        createHandle: function createHandle(name) {
+        createHandle: function (name) {
             var el = this.document.createElement('i');
             el.classList.add(name);
             return el;
         },
-        isHandle: function isHandle(el) {
+        isHandle: function (el) {
             var handles = this.handles;
             for (var n in handles) {
                 if (handles[n] === el) return true;
             }
             return false;
         },
-        show: function show(el) {
+        show: function (el) {
             this.el = el;
             if (this.cfg.snapToSize) {
                 this.otherImages = toArray(this.document.getElementsByTagName('img'));
@@ -1708,7 +1772,7 @@
             this.el.classList.add('ckimgrsz');
             this.showHandles();
         },
-        hide: function hide() {
+        hide: function () {
             // Remove class from all img.ckimgrsz
             var elements = this.document.getElementsByClassName('ckimgrsz');
             for (var i = 0; i < elements.length; ++i) {
@@ -1719,7 +1783,7 @@
                 this.container.parentNode.removeChild(this.container);
             }
         },
-        initDrag: function initDrag(e) {
+        initDrag: function (e) {
             if (e.button !== 0) {
                 //right-click or middle-click
                 return;
@@ -1752,7 +1816,7 @@
             };
             drag.start(e);
         },
-        updateHandles: function updateHandles(box, left, top) {
+        updateHandles: function (box, left, top) {
             left = left || 0;
             top = top || 0;
             var handles = this.handles;
@@ -1765,31 +1829,31 @@
             positionElement(handles.bm, Math.round(box.width / 2) - 3 + left, box.height - 4 + top);
             positionElement(handles.br, box.width - 4 + left, box.height - 4 + top);
         },
-        showHandles: function showHandles() {
+        showHandles: function () {
             var handles = this.handles;
             this.updateHandles(this.box);
             for (var n in handles) {
                 handles[n].style.display = 'block';
             }
         },
-        hideHandles: function hideHandles() {
+        hideHandles: function () {
             var handles = this.handles;
             for (var n in handles) {
                 handles[n].style.display = 'none';
             }
         },
-        showPreview: function showPreview() {
+        showPreview: function () {
             this.preview.style.backgroundImage = 'url("' + this.el.src + '")';
             this.calculateSize();
             this.updatePreview();
             this.preview.style.display = 'block';
         },
-        updatePreview: function updatePreview() {
+        updatePreview: function () {
             var box = this.previewBox;
             positionElement(this.preview, box.left, box.top);
             resizeElement(this.preview, box.width, box.height);
         },
-        hidePreview: function hidePreview() {
+        hidePreview: function () {
             var box = getBoundingBox(this.window, this.preview);
             this.result = {
                 width: box.width,
@@ -1797,7 +1861,7 @@
             };
             this.preview.style.display = 'none';
         },
-        calculateSize: function calculateSize(data) {
+        calculateSize: function (data) {
             var box = this.previewBox = {
                 top: 0,
                 left: 0,
@@ -1847,7 +1911,7 @@
                 box.top = this.box.height - box.height;
             }
         },
-        resizeComplete: function resizeComplete() {
+        resizeComplete: function () {
             resizeElement(this.el, this.result.width, this.result.height);
         }
     };
@@ -1863,7 +1927,7 @@
     }
 
     DragEvent.prototype = {
-        start: function start(e) {
+        start: function (e) {
             e.preventDefault();
             e.stopPropagation();
             this.target = e.target;
@@ -1880,7 +1944,7 @@
             this.document.body.classList.add('dragging-' + this.attr);
             this.onStart && this.onStart();
         },
-        update: function update(e) {
+        update: function (e) {
             this.currentPos = {
                 x: e.clientX,
                 y: e.clientY
@@ -1895,7 +1959,7 @@
                 alt: e.altKey
             };
         },
-        mousemove: function mousemove(e) {
+        mousemove: function (e) {
             this.update(e);
             this.onDrag && this.onDrag();
             if (e.which === 0) {
@@ -1903,18 +1967,18 @@
                 this.mouseup(e);
             }
         },
-        keydown: function keydown(e) {
+        keydown: function (e) {
             //escape key cancels dragging
             if (e.keyCode === 27) {
                 this.release();
             }
         },
-        mouseup: function mouseup(e) {
+        mouseup: function (e) {
             this.update(e);
             this.release();
             this.onComplete && this.onComplete();
         },
-        release: function release() {
+        release: function () {
             this.document.body.classList.remove('dragging-' + this.attr);
             var events = this.events;
             this.document.removeEventListener('mousemove', events.mousemove, false);
@@ -1963,8 +2027,6 @@
         };
     }
 })();
-'use strict';
-
 (function () {
     'use strict';
 
@@ -1994,7 +2056,7 @@
          * @method init
          * @param {Object} editor The current editor instance
          */
-        init: function init(editor) {
+        init: function (editor) {
             editor.once('contentDom', (function () {
                 var editable = editor.editable();
 
@@ -2015,7 +2077,7 @@
          * @protected
          * @param {CKEDITOR.dom.event} event A `paste` event, as received natively from CKEditor
          */
-        _onPaste: function _onPaste(event) {
+        _onPaste: function (event) {
             if (event.data.$.clipboardData) {
                 var pastedData = event.data.$.clipboardData.items[0];
                 var editor = event.listenerData.editor;
@@ -2043,8 +2105,6 @@
         }
     });
 })();
-'use strict';
-
 (function () {
     'use strict';
 
@@ -2076,7 +2136,7 @@
          * @method init
          * @param {Object} editor The current editor instance
          */
-        init: function init(editor) {
+        init: function (editor) {
             editor.on('blur', this._checkEmptyData, this);
             editor.once('contentDom', this._checkEmptyData, this);
         },
@@ -2089,7 +2149,7 @@
          * @method _checkEmptyData
          * @param {CKEDITOR.dom.event} editor event, fired from CKEditor
          */
-        _checkEmptyData: function _checkEmptyData(event) {
+        _checkEmptyData: function (event) {
             var editor = event.editor;
 
             if (editor.getData() === '') {
@@ -2111,12 +2171,10 @@
  * For licensing, see LICENSE.md or http://ckeditor.com/license
  */
 
-'use strict';
-
 (function () {
     'use strict';
 
-    if (CKEDITOR.plugins.get('tableresize') || CKEDITOR.plugins.get('ae_tableresize')) {
+    if (CKEDITOR.plugins.get('ae_tableresize')) {
         return;
     }
 
@@ -2457,7 +2515,7 @@
     CKEDITOR.plugins.add('ae_tableresize', {
         requires: 'ae_tabletools',
 
-        init: function init(editor) {
+        init: function (editor) {
             editor.on('contentDom', function () {
                 var resizer,
                     editable = editor.editable();
@@ -2521,17 +2579,11 @@
  * For licensing, see LICENSE.md or http://ckeditor.com/license
  */
 
-'use strict';
-
 (function () {
 	'use strict';
 
-	if (CKEDITOR.plugins.get('tabletools') || CKEDITOR.plugins.get('ae_tabletools')) {
-		if (!CKEDITOR.plugins.get('ae_tabletools')) {
-			CKEDITOR.plugins.add('ae_tabletools', {});
-
-			return;
-		}
+	if (CKEDITOR.plugins.get('ae_tabletools')) {
+		return;
 	}
 
 	var cellNodeRegex = /^(?:td|th)$/;
@@ -3120,13 +3172,13 @@
 	}
 
 	CKEDITOR.plugins.add('ae_tabletools', {
-		init: function init(editor) {
+		init: function (editor) {
 			var lang = editor.lang.table;
 
 			function createDef(def) {
 				return CKEDITOR.tools.extend(def || {}, {
 					contextSensitive: 1,
-					refresh: function refresh(editor, path) {
+					refresh: function (editor, path) {
 						this.setState(path.contains({ td: 1, th: 1 }, 1) ? CKEDITOR.TRISTATE_OFF : CKEDITOR.TRISTATE_DISABLED);
 					}
 				});
@@ -3144,7 +3196,7 @@
 
 			addCmd('rowDelete', createDef({
 				requiredContent: 'table',
-				exec: function exec(editor) {
+				exec: function (editor) {
 					var selection = editor.getSelection();
 					placeCursorInCell(deleteRows(selection));
 				}
@@ -3152,7 +3204,7 @@
 
 			addCmd('rowInsertBefore', createDef({
 				requiredContent: 'table',
-				exec: function exec(editor) {
+				exec: function (editor) {
 					var selection = editor.getSelection();
 					insertRow(selection, true);
 				}
@@ -3160,7 +3212,7 @@
 
 			addCmd('rowInsertAfter', createDef({
 				requiredContent: 'table',
-				exec: function exec(editor) {
+				exec: function (editor) {
 					var selection = editor.getSelection();
 					insertRow(selection);
 				}
@@ -3168,7 +3220,7 @@
 
 			addCmd('columnDelete', createDef({
 				requiredContent: 'table',
-				exec: function exec(editor) {
+				exec: function (editor) {
 					var selection = editor.getSelection();
 					var element = deleteColumns(selection);
 					element && placeCursorInCell(element, true);
@@ -3177,7 +3229,7 @@
 
 			addCmd('columnInsertBefore', createDef({
 				requiredContent: 'table',
-				exec: function exec(editor) {
+				exec: function (editor) {
 					var selection = editor.getSelection();
 					insertColumn(selection, true);
 				}
@@ -3185,7 +3237,7 @@
 
 			addCmd('columnInsertAfter', createDef({
 				requiredContent: 'table',
-				exec: function exec(editor) {
+				exec: function (editor) {
 					var selection = editor.getSelection();
 					insertColumn(selection);
 				}
@@ -3193,7 +3245,7 @@
 
 			addCmd('cellDelete', createDef({
 				requiredContent: 'table',
-				exec: function exec(editor) {
+				exec: function (editor) {
 					var selection = editor.getSelection();
 					deleteCells(selection);
 				}
@@ -3202,7 +3254,7 @@
 			addCmd('cellMerge', createDef({
 				allowedContent: 'td[colspan,rowspan]',
 				requiredContent: 'td[colspan,rowspan]',
-				exec: function exec(editor) {
+				exec: function (editor) {
 					placeCursorInCell(mergeCells(editor.getSelection()), true);
 				}
 			}));
@@ -3210,7 +3262,7 @@
 			addCmd('cellMergeRight', createDef({
 				allowedContent: 'td[colspan]',
 				requiredContent: 'td[colspan]',
-				exec: function exec(editor) {
+				exec: function (editor) {
 					placeCursorInCell(mergeCells(editor.getSelection(), 'right'), true);
 				}
 			}));
@@ -3218,7 +3270,7 @@
 			addCmd('cellMergeDown', createDef({
 				allowedContent: 'td[rowspan]',
 				requiredContent: 'td[rowspan]',
-				exec: function exec(editor) {
+				exec: function (editor) {
 					placeCursorInCell(mergeCells(editor.getSelection(), 'down'), true);
 				}
 			}));
@@ -3226,7 +3278,7 @@
 			addCmd('cellVerticalSplit', createDef({
 				allowedContent: 'td[rowspan]',
 				requiredContent: 'td[rowspan]',
-				exec: function exec(editor) {
+				exec: function (editor) {
 					placeCursorInCell(verticalSplitCell(editor.getSelection()));
 				}
 			}));
@@ -3234,14 +3286,14 @@
 			addCmd('cellHorizontalSplit', createDef({
 				allowedContent: 'td[colspan]',
 				requiredContent: 'td[colspan]',
-				exec: function exec(editor) {
+				exec: function (editor) {
 					placeCursorInCell(horizontalSplitCell(editor.getSelection()));
 				}
 			}));
 
 			addCmd('cellInsertBefore', createDef({
 				requiredContent: 'table',
-				exec: function exec(editor) {
+				exec: function (editor) {
 					var selection = editor.getSelection();
 					insertCell(selection, true);
 				}
@@ -3249,7 +3301,7 @@
 
 			addCmd('cellInsertAfter', createDef({
 				requiredContent: 'table',
-				exec: function exec(editor) {
+				exec: function (editor) {
 					var selection = editor.getSelection();
 					insertCell(selection);
 				}

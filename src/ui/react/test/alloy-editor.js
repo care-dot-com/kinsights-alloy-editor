@@ -39,6 +39,14 @@
             it('should set contenteditable to true', function() {
                 assert.isTrue(this.el.isContentEditable);
             });
+
+            it('should set contenteditable attribute to false on editor destroying', function() {
+                var editable = this.alloyEditor.get('nativeEditor').editable();
+
+                this.alloyEditor.destroy();
+                this.alloyEditor = null;
+                assert.strictEqual('false', editable.getAttribute('contenteditable'));
+            });
         });
 
         describe('with enableContentEditable set to true', function() {
@@ -55,6 +63,14 @@
             it('should set contenteditable to true', function() {
                 assert.isTrue(this.el.isContentEditable);
             });
+
+            it('should set contenteditable attribute to false on editor destroying', function() {
+                var editable = this.alloyEditor.get('nativeEditor').editable();
+
+                this.alloyEditor.destroy();
+                this.alloyEditor = null;
+                assert.strictEqual('false', editable.getAttribute('contenteditable'));
+            });
         });
 
         describe('with enableContentEditable set to false', function() {
@@ -70,6 +86,14 @@
 
             it('should not force the srcNode to be contenteditable', function() {
                 assert.isFalse(this.el.isContentEditable);
+            });
+
+            it('should leave contenteditable attribute to false on editor destroying', function() {
+                var editable = this.alloyEditor.get('nativeEditor').editable();
+
+                this.alloyEditor.destroy();
+                this.alloyEditor = null;
+                assert.strictEqual('false', editable.getAttribute('contenteditable'));
             });
         });
 
@@ -92,6 +116,34 @@
                 this.alloyEditor.destroy();
                 this.alloyEditor = null;
                 assert.isFalse(editable.hasClass('ae-editable'));
+            });
+        });
+
+        describe('UI component integration', function() {
+            beforeEach(function(done) {
+                initEditor.call(this, done);
+            });
+
+            afterEach(function() {
+                cleanUpEditor.call(this);
+            });
+
+            it('should fire an editorUpdate event when the component state changes', function(done) {
+                var onEditorUpdate = sinon.stub();
+
+                var alloyEditor = this.alloyEditor;
+
+                var nativeEditor = alloyEditor.get('nativeEditor');
+
+                nativeEditor.on('editorUpdate', onEditorUpdate);
+
+                nativeEditor.on('uiReady', function() {
+                    alloyEditor._mainUI.setState({hidden: true});
+
+                    assert.ok(onEditorUpdate.calledOnce);
+
+                    done();
+                });
             });
         });
 

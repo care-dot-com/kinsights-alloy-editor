@@ -7,7 +7,8 @@
         test: AlloyEditor.SelectionTest.link
     }, {
         name: 'image',
-        buttons: ['imageLeft', 'imageRight'],
+        buttons: ['imageLeft', 'imageCenter', 'imageRight'],
+        setPosition: AlloyEditor.SelectionSetPosition.image,
         test: AlloyEditor.SelectionTest.image
     }, {
         name: 'text',
