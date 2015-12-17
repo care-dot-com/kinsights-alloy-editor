@@ -31,7 +31,7 @@
                 <li class="divider-vertical"></li>
                 <li>
                     <p class="navbar-text">
-                        API Docs for Version: <b>0.4.2</b>
+                        API Docs for Version: <b>0.7.0</b>
                     </p>
                 </li>
             </div>
@@ -72,11 +72,13 @@
                                     <li><a href="../classes/ButtonH2.html">ButtonH2</a></li>
                                     <li><a href="../classes/ButtonHline.html">ButtonHline</a></li>
                                     <li><a href="../classes/ButtonImage.html">ButtonImage</a></li>
+                                    <li><a href="../classes/ButtonImageAlignCenter.html">ButtonImageAlignCenter</a></li>
                                     <li><a href="../classes/ButtonImageAlignLeft.html">ButtonImageAlignLeft</a></li>
                                     <li><a href="../classes/ButtonImageAlignRight.html">ButtonImageAlignRight</a></li>
                                     <li><a href="../classes/ButtonItalic.html">ButtonItalic</a></li>
                                     <li><a href="../classes/ButtonLink.html">ButtonLink</a></li>
                                     <li><a href="../classes/ButtonLinkEdit.html">ButtonLinkEdit</a></li>
+                                    <li><a href="../classes/ButtonLinkTargetEdit.html">ButtonLinkTargetEdit</a></li>
                                     <li><a href="../classes/ButtonOrderedList.html">ButtonOrderedList</a></li>
                                     <li><a href="../classes/ButtonParagraphAlignLeft.html">ButtonParagraphAlignLeft</a></li>
                                     <li><a href="../classes/ButtonParagraphAlignRight.html">ButtonParagraphAlignRight</a></li>
@@ -217,6 +219,11 @@
                                                                 <span class="flag static">static</span>
                                                         </li>
                                                         <li class="index-item method">
+                                                            <a href="#method_implementEventTarget">implementEventTarget</a>
+                            
+                                                                <span class="flag static">static</span>
+                                                        </li>
+                                                        <li class="index-item method">
                                                             <a href="#method_loadLanguageResources">loadLanguageResources</a>
                             
                                                                 <span class="flag static">static</span>
@@ -229,12 +236,12 @@
                             
                                                 <ul class="index-list properties">
                                                         <li class="index-item property">
-                                                            <a href="#property_"></a>
+                                                            <a href="#property_Buttons">Buttons</a>
                             
                                                                 <span class="flag static">static</span>
                                                         </li>
                                                         <li class="index-item property">
-                                                            <a href="#property_Buttons">Buttons</a>
+                                                            <a href="#property_regexBasePath">regexBasePath</a>
                             
                                                                 <span class="flag static">static</span>
                                                         </li>
@@ -361,7 +368,7 @@
                                                     <div class="meta">
                                                                 <p>
                                                                 Defined in
-                                                        <a href="../files/src_ui_react_src_adapter_main.js.html#l28"><code>src&#x2F;ui&#x2F;react&#x2F;src&#x2F;adapter&#x2F;main.js:28</code></a>
+                                                        <a href="../files/src_ui_react_src_adapter_main.js.html#l29"><code>src&#x2F;ui&#x2F;react&#x2F;src&#x2F;adapter&#x2F;main.js:29</code></a>
                                                         </p>
                                                 
                                                 
@@ -413,7 +420,7 @@
                                                     <div class="meta">
                                                                 <p>
                                                                 Defined in
-                                                        <a href="../files/src_ui_react_src_adapter_main.js.html#l118"><code>src&#x2F;ui&#x2F;react&#x2F;src&#x2F;adapter&#x2F;main.js:118</code></a>
+                                                        <a href="../files/src_ui_react_src_adapter_main.js.html#l121"><code>src&#x2F;ui&#x2F;react&#x2F;src&#x2F;adapter&#x2F;main.js:121</code></a>
                                                         </p>
                                                 
                                                 
@@ -457,6 +464,37 @@
                                                         </div>
                                                 
                                                 </div>
+                                                <div id="method_implementEventTarget" class="method item">
+                                                    <h3 class="name"><code>implementEventTarget</code></h3>
+                                                
+                                                        <span class="paren">()</span>
+                                                
+                                                
+                                                
+                                                
+                                                
+                                                        <span class="flag static">static</span>
+                                                
+                                                
+                                                
+                                                    <div class="meta">
+                                                                <p>
+                                                                Defined in
+                                                        <a href="../files/src_ui_react_src_adapter_main.js.html#l148"><code>src&#x2F;ui&#x2F;react&#x2F;src&#x2F;adapter&#x2F;main.js:148</code></a>
+                                                        </p>
+                                                
+                                                
+                                                
+                                                    </div>
+                                                
+                                                    <div class="description">
+                                                        <p>Implements event firing and subscribing via CKEDITOR.event.</p>
+                                                
+                                                    </div>
+                                                
+                                                
+                                                
+                                                </div>
                                                 <div id="method_loadLanguageResources" class="method item">
                                                     <h3 class="name"><code>loadLanguageResources</code></h3>
                                                 
@@ -479,7 +517,7 @@
                                                     <div class="meta">
                                                                 <p>
                                                                 Defined in
-                                                        <a href="../files/src_ui_react_src_adapter_main.js.html#l76"><code>src&#x2F;ui&#x2F;react&#x2F;src&#x2F;adapter&#x2F;main.js:76</code></a>
+                                                        <a href="../files/src_ui_react_src_adapter_main.js.html#l77"><code>src&#x2F;ui&#x2F;react&#x2F;src&#x2F;adapter&#x2F;main.js:77</code></a>
                                                         </p>
                                                 
                                                 
@@ -517,32 +555,6 @@
                                         <div id="properties" class="api-class-tabpanel tab-pane">
                                             <h2 class="off-left">Properties</h2>
                             
-                                                <div id="property_" class="property item">
-                                                    <h3 class="name"><code></code></h3>
-                                                    <span class="type">RegExp</span>
-                                                
-                                                
-                                                
-                                                
-                                                        <span class="flag static">static</span>
-                                                
-                                                    <div class="meta">
-                                                                <p>
-                                                                Defined in
-                                                        <a href="../files/src_ui_react_src_adapter_main.js.html#l145"><code>src&#x2F;ui&#x2F;react&#x2F;src&#x2F;adapter&#x2F;main.js:145</code></a>
-                                                        </p>
-                                                
-                                                
-                                                    </div>
-                                                
-                                                    <div class="description">
-                                                        <p>Regular expression which should match the script which have been used to load AlloyEditor.</p>
-                                                
-                                                    </div>
-                                                
-                                                
-                                                
-                                                </div>
                                                 <div id="property_Buttons" class="property item">
                                                     <h3 class="name"><code>Buttons</code></h3>
                                                     <span class="type">Object</span>
@@ -555,7 +567,7 @@
                                                     <div class="meta">
                                                                 <p>
                                                                 Defined in
-                                                        <a href="../files/src_ui_react_src_adapter_main.js.html#l154"><code>src&#x2F;ui&#x2F;react&#x2F;src&#x2F;adapter&#x2F;main.js:154</code></a>
+                                                        <a href="../files/src_ui_react_src_adapter_main.js.html#l169"><code>src&#x2F;ui&#x2F;react&#x2F;src&#x2F;adapter&#x2F;main.js:169</code></a>
                                                         </p>
                                                 
                                                 
@@ -563,6 +575,32 @@
                                                 
                                                     <div class="description">
                                                         <p>And object, containing all currently registered buttons in AlloyEditor.</p>
+                                                
+                                                    </div>
+                                                
+                                                
+                                                
+                                                </div>
+                                                <div id="property_regexBasePath" class="property item">
+                                                    <h3 class="name"><code>regexBasePath</code></h3>
+                                                    <span class="type">RegExp</span>
+                                                
+                                                
+                                                
+                                                
+                                                        <span class="flag static">static</span>
+                                                
+                                                    <div class="meta">
+                                                                <p>
+                                                                Defined in
+                                                        <a href="../files/src_ui_react_src_adapter_main.js.html#l160"><code>src&#x2F;ui&#x2F;react&#x2F;src&#x2F;adapter&#x2F;main.js:160</code></a>
+                                                        </p>
+                                                
+                                                
+                                                    </div>
+                                                
+                                                    <div class="description">
+                                                        <p>Regular expression which should match the script which have been used to load AlloyEditor.</p>
                                                 
                                                     </div>
                                                 
@@ -581,7 +619,7 @@
                                                     <div class="meta">
                                                                 <p>
                                                                 Defined in
-                                                        <a href="../files/src_ui_react_src_adapter_main.js.html#l163"><code>src&#x2F;ui&#x2F;react&#x2F;src&#x2F;adapter&#x2F;main.js:163</code></a>
+                                                        <a href="../files/src_ui_react_src_adapter_main.js.html#l178"><code>src&#x2F;ui&#x2F;react&#x2F;src&#x2F;adapter&#x2F;main.js:178</code></a>
                                                         </p>
                                                 
                                                 
@@ -612,7 +650,7 @@
                                                     <div class="meta">
                                                                 <p>
                                                                 Defined in
-                                                        <a href="../files/src_ui_react_src_adapter_main.js.html#l172"><code>src&#x2F;ui&#x2F;react&#x2F;src&#x2F;adapter&#x2F;main.js:172</code></a>
+                                                        <a href="../files/src_ui_react_src_adapter_main.js.html#l187"><code>src&#x2F;ui&#x2F;react&#x2F;src&#x2F;adapter&#x2F;main.js:187</code></a>
                                                         </p>
                                                 
                                                 

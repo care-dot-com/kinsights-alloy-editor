@@ -29,8 +29,10 @@ gulp.task('create-output-dir', function(callback) {
 });
 
 gulp.task('copy-core-files', function() {
-    return gulp.src(srcFiles, {cwd: 'src', base: 'src'})
-        .pipe(babel())
+    return gulp.src(srcFiles.main.concat(srcFiles.ui), {cwd: 'src', base: 'src'})
+        .pipe(babel({
+            presets: ['es2015', 'react']
+        }))
         .pipe(gulp.dest(path.join(editorDistFolder, 'test')));
 });
 
@@ -40,7 +42,7 @@ gulp.task('copy-language-files', function() {
 });
 
 gulp.task('copy-react', function() {
-    return gulp.src(path.join(reactDir, 'vendor', 'react-with-addons.js'))
+    return gulp.src(path.join(reactDir, 'vendor', 'react-with-addons-all.js'))
         .pipe(gulp.dest(editorDistFolder));
 });
 

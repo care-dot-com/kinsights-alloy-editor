@@ -31,7 +31,7 @@
                 <li class="divider-vertical"></li>
                 <li>
                     <p class="navbar-text">
-                        API Docs for Version: <b>0.4.2</b>
+                        API Docs for Version: <b>0.7.0</b>
                     </p>
                 </li>
             </div>
@@ -72,11 +72,13 @@
                                     <li><a href="../classes/ButtonH2.html">ButtonH2</a></li>
                                     <li><a href="../classes/ButtonHline.html">ButtonHline</a></li>
                                     <li><a href="../classes/ButtonImage.html">ButtonImage</a></li>
+                                    <li><a href="../classes/ButtonImageAlignCenter.html">ButtonImageAlignCenter</a></li>
                                     <li><a href="../classes/ButtonImageAlignLeft.html">ButtonImageAlignLeft</a></li>
                                     <li><a href="../classes/ButtonImageAlignRight.html">ButtonImageAlignRight</a></li>
                                     <li><a href="../classes/ButtonItalic.html">ButtonItalic</a></li>
                                     <li><a href="../classes/ButtonLink.html">ButtonLink</a></li>
                                     <li><a href="../classes/ButtonLinkEdit.html">ButtonLinkEdit</a></li>
+                                    <li><a href="../classes/ButtonLinkTargetEdit.html">ButtonLinkTargetEdit</a></li>
                                     <li><a href="../classes/ButtonOrderedList.html">ButtonOrderedList</a></li>
                                     <li><a href="../classes/ButtonParagraphAlignLeft.html">ButtonParagraphAlignLeft</a></li>
                                     <li><a href="../classes/ButtonParagraphAlignRight.html">ButtonParagraphAlignRight</a></li>
@@ -178,7 +180,7 @@
                                  * @class AlloyEditor
                                  * @type {Object}
                                  */
-                                window.AlloyEditor = {
+                                var AlloyEditor = {
                                     /**
                                      * Creates an instance of AlloyEditor.
                                      *
@@ -190,8 +192,9 @@
                                      */
                                     editable: function(node, config) {
                                         config = config || {};
-                            
                                         config.srcNode = node;
+                            
+                                        AlloyEditor.implementEventTarget();
                             
                                         return new AlloyEditor.Core(config);
                                     },
@@ -253,6 +256,8 @@
                                      * @param {Function} callback Optional callback to be called when AlloyEditor loads the language resource.
                                      */
                                     loadLanguageResources: function(callback) {
+                                        AlloyEditor.implementEventTarget();
+                            
                                         if (AlloyEditor.Lang.isFunction(callback)) {
                                             if (AlloyEditor.Strings) {
                                                 setTimeout(callback, 0);
@@ -314,9 +319,21 @@
                                     },
                             
                                     /**
+                                     * Implements event firing and subscribing via CKEDITOR.event.
+                                     *
+                                     * @method implementEventTarget
+                                     * @static
+                                     */
+                                    implementEventTarget: function() {
+                                        if (!AlloyEditor.fire &amp;&amp; !AlloyEditor.on) {
+                                            CKEDITOR.event.implementOn(AlloyEditor);
+                                        }
+                                    },
+                            
+                                    /**
                                      * Regular expression which should match the script which have been used to load AlloyEditor.
                                      *
-                                     * @property
+                                     * @property regexBasePath
                                      * @type {RegExp}
                                      * @static
                                      */
@@ -348,7 +365,19 @@
                                      */
                                 };
                             
-                                CKEDITOR.event.implementOn(AlloyEditor);
+                                if (typeof module !== &#x27;undefined&#x27; &amp;&amp; typeof module.exports === &#x27;object&#x27;) {
+                                    module.exports = AlloyEditor;
+                                }
+                            
+                                if (typeof window !== &#x27;undefined&#x27;) {
+                                    window.AlloyEditor = AlloyEditor;
+                                } else if(typeof global !== &#x27;undefined&#x27;) {
+                                    global.AlloyEditor = AlloyEditor;
+                                } else if (typeof self !== &#x27;undefined&#x27;) {
+                                    self.AlloyEditor = AlloyEditor;
+                                } else {
+                                    this.AlloyEditor = AlloyEditor;
+                                }
                             }());
                                 </pre>
                             </div>

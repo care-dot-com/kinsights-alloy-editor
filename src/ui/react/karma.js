@@ -8,6 +8,7 @@ var argv = require('yargs').argv;
 var path = require('path');
 
 var srcFiles = require('./_src.js');
+srcFiles = srcFiles.main.concat(srcFiles.ui);
 
 var preprocessors = {
     '**/*.jsx': ['babel'],
@@ -72,7 +73,7 @@ var filesToLoad = [
 
     /* ReactJS */
     {
-        pattern: path.join(alloyEditorDir, 'react-with-addons.js'),
+        pattern: path.join(alloyEditorDir, 'react-with-addons-all.js'),
         included: true,
         watched: false
     },
@@ -133,6 +134,12 @@ var defaultConfig = {
     // preprocess matching files before serving them to the browser
     // available preprocessors: https://npmjs.org/browse/keyword/karma-preprocessor
     preprocessors: preprocessors,
+
+    babelPreprocessor: {
+      options: {
+        presets: ['es2015', 'react']
+      }
+    },
 
     // test results reporter to use
     // possible values: 'dots', 'progress'

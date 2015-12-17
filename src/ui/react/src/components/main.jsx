@@ -102,26 +102,34 @@
                 this._setUIHidden(document.activeElement);
             }, this.props.eventsDelay, this);
 
-            editor.once('contentDom', function() {
-                document.addEventListener('mousedown', this._mousedownListener);
-                document.addEventListener('keydown', this._keyDownListener);
-            }.bind(this));
+            document.addEventListener('mousedown', this._mousedownListener);
+            document.addEventListener('keydown', this._keyDownListener);
         },
 
         /**
          * Lifecycle. Invoked immediately after the component's updates are flushed to the DOM.
-         * Fires 'ariaUpdate' event passing ARIA related messages.
+         * Fires `ariaUpdate` event passing ARIA related messages.
+         * Fires `editorUpdate` event passing the previous and current properties and state.
          *
          * @method componentDidUpdate
          */
         componentDidUpdate: function (prevProps, prevState) {
-            var domNode = React.findDOMNode(this);
+            var domNode = ReactDOM.findDOMNode(this);
+
+            var editor = this.props.editor.get('nativeEditor');
 
             if (domNode) {
-                this.props.editor.get('nativeEditor').fire('ariaUpdate', {
+                editor.fire('ariaUpdate', {
                     message: this._getAvailableToolbarsMessage(domNode)
                 });
             }
+
+            editor.fire('editorUpdate', {
+                prevProps: prevProps,
+                prevState: prevState,
+                props: this.props,
+                state: this.state
+            });
         },
 
         _getAriaUpdateTemplate: function(ariaUpdate) {
@@ -304,7 +312,7 @@
          * @param {DOMElement} target The DOM element with which user interacted lastly.
          */
         _setUIHidden: function(target) {
-            var domNode = React.findDOMNode(this);
+            var domNode = ReactDOM.findDOMNode(this);
 
             if (domNode) {
                 var editable = this.props.editor.get('nativeEditor').editable();
@@ -321,6 +329,24 @@
             }
         }
     });
+
+    /**
+     * Fired when component updates and when it is rendered in the DOM.
+     * The payload consists from a `message` property containing the ARIA message.
+     *
+     * @event ariaUpdate
+     */
+
+    /**
+     * Fired when component updates. The payload consists from an object with the following
+     * properties:
+     * - prevProps - The previous properties of the component
+     * - prevState - The previous state of the component
+     * - props - The current properties of the component
+     * - state - The current state of the component
+     *
+     * @event ariaUpdate
+     */
 
     AlloyEditor.UI = UI;
 }());
