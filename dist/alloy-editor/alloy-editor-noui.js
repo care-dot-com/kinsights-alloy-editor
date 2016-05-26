@@ -53,6 +53,7 @@
 (function () {
     'use strict';
 
+    var REGEX_EMAIL_SCHEME = /^[a-z0-9\u0430-\u044F\._-]+@/i;
     var REGEX_URI_SCHEME = /^(?:[a-z][a-z0-9+\-.]*)\:|^\//i;
 
     /**
@@ -63,12 +64,43 @@
      * @param {Object} editor The CKEditor instance.
      */
 
-    function Link(editor) {
+    function Link(editor, config) {
         this._editor = editor;
+        this.appendProtocol = config && config.appendProtocol === false ? false : true;
     }
 
     Link.prototype = {
         constructor: Link,
+
+        /**
+         * Advances the editor selection to the next available position after a
+         * given link or the one in the current selection.
+         *
+         * @param {CKEDITOR.dom.element} link The link element which link style should be removed.
+         * @method advanceSelection
+         */
+        advanceSelection: function (link) {
+            link = link || this.getFromSelection();
+
+            var range = this._editor.getSelection().getRanges()[0];
+
+            if (link) {
+                range.moveToElementEditEnd(link);
+
+                var nextNode = range.getNextEditableNode();
+
+                if (nextNode && !this._editor.element.equals(nextNode.getCommonAncestor(link))) {
+                    var whitespace = /\s/.exec(nextNode.getText());
+
+                    var offset = whitespace ? whitespace.index + 1 : 0;
+
+                    range.setStart(nextNode, offset);
+                    range.setEnd(nextNode, offset);
+                }
+            }
+
+            this._editor.getSelection().selectRanges([range]);
+        },
 
         /**
          * Create a link with given URI as href.
@@ -76,8 +108,9 @@
          * @method create
          * @param {String} URI The URI of the link.
          * @param {Object} attrs A config object with link attributes. These might be arbitrary DOM attributes.
+         * @param {Object} modifySelection A config object with an advance attribute to indicate if the selection should be moved after the link creation.
          */
-        create: function (URI, attrs) {
+        create: function (URI, attrs, modifySelection) {
             var selection = this._editor.getSelection();
 
             var range = selection.getRanges()[0];
@@ -102,7 +135,12 @@
 
             style.type = CKEDITOR.STYLE_INLINE;
             style.applyToRange(range, this._editor);
-            range.select();
+
+            if (modifySelection && modifySelection.advance) {
+                this.advanceSelection();
+            } else {
+                range.select();
+            }
         },
 
         /**
@@ -135,12 +173,17 @@
          * Removes a link from the editor.
          *
          * @param {CKEDITOR.dom.element} link The link element which link style should be removed.
+         * @param {Object} modifySelection A config object with an advance attribute to indicate if the selection should be moved after the link creation.
          * @method remove
          */
-        remove: function (link) {
+        remove: function (link, modifySelection) {
             var editor = this._editor;
 
             if (link) {
+                if (modifySelection && modifySelection.advance) {
+                    this.advanceSelection();
+                }
+
                 link.remove(editor);
             } else {
                 var style = new CKEDITOR.style({
@@ -166,8 +209,9 @@
          * @method update
          * @param {Object|String} attrs The attributes to update or remove. Attributes with null values will be removed.
          * @param {CKEDITOR.dom.element} link The link element which href should be removed.
+         * @param {Object} modifySelection A config object with an advance attribute to indicate if the selection should be moved after the link creation.
          */
-        update: function (attrs, link) {
+        update: function (attrs, link, modifySelection) {
             link = link || this.getFromSelection();
 
             if (typeof attrs === 'string') {
@@ -198,11 +242,17 @@
                 link.removeAttributes(removeAttrs);
                 link.setAttributes(setAttrs);
             }
+
+            if (modifySelection && modifySelection.advance) {
+                this.advanceSelection(link);
+            }
         },
 
         /**
-         * Checks if the URI has a scheme. If not, the default 'http' scheme with
-         * hierarchical path '//' is added to it.
+         * Checks if the URI has an '@' symbol. If it does and the URI looks like an email
+         * and doesn't have 'mailto:', 'mailto:' is added to the URI.
+         * If it doesn't and the URI doesn't have a scheme, the default 'http' scheme with
+         * hierarchical path '//' is added to the URI.
          *
          * @protected
          * @method _getCompleteURI
@@ -210,8 +260,10 @@
          * @return {String} The URI updated with the protocol.
          */
         _getCompleteURI: function (URI) {
-            if (!REGEX_URI_SCHEME.test(URI)) {
-                URI = 'http://' + URI;
+            if (REGEX_EMAIL_SCHEME.test(URI)) {
+                URI = 'mailto:' + URI;
+            } else if (!REGEX_URI_SCHEME.test(URI)) {
+                URI = this.appendProtocol ? 'http://' + URI : URI;
             }
 
             return URI;
@@ -961,6 +1013,65 @@
      */
 
     /**
+     * Sends a request using the JSONP technique.
+     *
+     * @method CKEDITOR.tools.jsonp
+     * @static
+     * @param {CKEDITOR.template} urlTemplate The template of the URL to be requested. All properties
+     * passed in `urlParams` can be used, plus a `{callback}`, which represent a JSONP callback, must be defined.
+     * @param {Object} urlParams Parameters to be passed to the `urlTemplate`.
+     * @param {Function} callback A function to be called in case of success.
+     * @param {Function} errorCallback A function to be called in case of failure.
+     * @return {Object} An object with the following properties:
+     * - id: the transaction ID
+     * - a `cancel()` method
+     */
+
+    CKEDITOR.tools.jsonp = function (urlTemplate, urlParams, callback, errorCallback) {
+        var callbackKey = CKEDITOR.tools.getNextNumber();
+
+        urlParams = urlParams || {};
+        urlParams.callback = 'CKEDITOR._.jsonpCallbacks[' + callbackKey + ']';
+
+        if (!CKEDITOR._.jsonpCallbacks) {
+            CKEDITOR._.jsonpCallbacks = {};
+        }
+
+        CKEDITOR._.jsonpCallbacks[callbackKey] = function (response) {
+            setTimeout(function () {
+                cleanUp();
+
+                callback(response);
+            });
+        };
+
+        var scriptElement = new CKEDITOR.dom.element('script');
+        scriptElement.setAttribute('src', urlTemplate.output(urlParams));
+        scriptElement.on('error', function () {
+            cleanUp();
+
+            if (errorCallback) {
+                errorCallback();
+            }
+        });
+
+        function cleanUp() {
+            if (scriptElement) {
+                scriptElement.remove();
+                delete CKEDITOR._.jsonpCallbacks[callbackKey];
+                scriptElement = null;
+            }
+        }
+
+        CKEDITOR.document.getBody().append(scriptElement);
+
+        return {
+            cancel: cleanUp,
+            id: callbackKey
+        };
+    };
+
+    /**
      * Returns a new object containing all of the properties of all the supplied
      * objects. The properties from later objects will overwrite those in earlier
      * objects.
@@ -972,7 +1083,6 @@
      * @param {Object} objects* One or more objects to merge.
      * @return {Object} A new merged object.
      */
-
     CKEDITOR.tools.merge = CKEDITOR.tools.merge || function () {
         var result = {};
 
@@ -1094,6 +1204,14 @@
                 }
             }, uiTasksTimeout);
 
+            var handleBlur = function (event) {
+                event.removeListener('blur', handleBlur);
+                event.removeListener('keyup', handleUI);
+                event.removeListener('mouseup', handleUI);
+
+                handleUI(event);
+            };
+
             editor.on('ariaUpdate', function (event) {
                 // handleAria is debounced function, so if it is being called multiple times, it will
                 // be canceled until some time passes.
@@ -1109,8 +1227,13 @@
             editor.once('contentDom', function () {
                 var editable = editor.editable();
 
-                editable.attachListener(editable, 'mouseup', handleUI);
-                editable.attachListener(editable, 'keyup', handleUI);
+                editable.attachListener(editable, 'focus', function (event) {
+                    editable.attachListener(editable, 'blur', handleBlur);
+                    editable.attachListener(editable, 'keyup', handleUI);
+                    editable.attachListener(editable, 'mouseup', handleUI);
+
+                    handleUI(event);
+                });
             });
 
             editor.on('destroy', function (event) {
@@ -1154,9 +1277,17 @@
 
     /**
      * CKEditor plugin which allows Drag&Drop of images directly into the editable area. The image will be encoded
-     * as Data URI. An event `imageAdd` will be fired with the inserted element into the editable area.
+     * as Data URI. An event `beforeImageAdd` will be fired with the list of dropped images. If any of the listeners
+     * returns `false` or cancels the event, the images won't be added to the content. Otherwise,
+     * an event `imageAdd` will be fired with the inserted element into the editable area.
      *
      * @class CKEDITOR.plugins.ae_addimages
+     */
+
+    /**
+     * Fired before adding images to the editor.
+     * @event beforeImageAdd
+     * @param {Array} imageFiles Array of image files
      */
 
     /**
@@ -1164,6 +1295,7 @@
      *
      * @event imageAdd
      * @param {CKEDITOR.dom.element} el The created image with src as Data URI
+     * @param {File} file The image file
      */
 
     CKEDITOR.plugins.add('ae_addimages', {
@@ -1175,7 +1307,7 @@
          * @param {Object} editor The current editor instance
          */
         init: function (editor) {
-            editor.once('contentDom', (function () {
+            editor.once('contentDom', function () {
                 var editable = editor.editable();
 
                 editable.attachListener(editable, 'dragenter', this._onDragEnter, this, {
@@ -1193,7 +1325,7 @@
                 editable.attachListener(editable, 'paste', this._onPaste, this, {
                     editor: editor
                 });
-            }).bind(this));
+            }.bind(this));
         },
 
         /**
@@ -1206,15 +1338,53 @@
          * @param {Object} editor The current editor instance
          */
         _handleFiles: function (files, editor) {
-            for (var i = 0; i < files.length; i++) {
-                var file = files[i];
+            var file;
+            var i;
+
+            var imageFiles = [];
+
+            for (i = 0; i < files.length; i++) {
+                file = files[i];
 
                 if (file.type.indexOf('image') === 0) {
+                    imageFiles.push(file);
+                }
+            }
+
+            var result = editor.fire('beforeImageAdd', {
+                imageFiles: imageFiles
+            });
+
+            if (!!result) {
+                for (i = 0; i < files.length; i++) {
+                    file = files[i];
+
                     this._processFile(file, editor);
                 }
             }
 
             return false;
+        },
+
+        /**
+         * Handles drag drop event. The function will create a selection from the current
+         * point and will send a list of files to be processed to
+         * {{#crossLink "CKEDITOR.plugins.ae_addimages/_handleFiles:method"}}{{/crossLink}} method.
+         *
+         * @protected
+         * @method _onDragDrop
+         * @param {CKEDITOR.dom.event} event dragdrop event, as received natively from CKEditor
+         */
+        _onDragDrop: function (event) {
+            var nativeEvent = event.data.$;
+
+            new CKEDITOR.dom.event(nativeEvent).preventDefault();
+
+            var editor = event.listenerData.editor;
+
+            event.listenerData.editor.createSelectionFromPoint(nativeEvent.clientX, nativeEvent.clientY);
+
+            this._handleFiles(nativeEvent.dataTransfer.files, editor);
         },
 
         /**
@@ -1244,27 +1414,6 @@
         },
 
         /**
-         * Handles drag drop event. The function will create selection from the current points and
-         * will send a list of files to be processed to
-         * {{#crossLink "CKEDITOR.plugins.ae_addimages/_handleFiles:method"}}{{/crossLink}}
-         *
-         * @protected
-         * @method _onDragDrop
-         * @param {CKEDITOR.dom.event} event dragdrop event, as received natively from CKEditor
-         */
-        _onDragDrop: function (event) {
-            var nativeEvent = event.data.$;
-
-            new CKEDITOR.dom.event(nativeEvent).preventDefault();
-
-            var editor = event.listenerData.editor;
-
-            event.listenerData.editor.createSelectionFromPoint(nativeEvent.clientX, nativeEvent.clientY);
-
-            this._handleFiles(nativeEvent.dataTransfer.files, editor);
-        },
-
-        /**
          * Checks if the pasted data is image and passes it to
          * {{#crossLink "CKEDITOR.plugins.ae_addimages/_processFile:method"}}{{/crossLink}} for processing.
          *
@@ -1273,7 +1422,7 @@
          * @param {CKEDITOR.dom.event} event A `paste` event, as received natively from CKEditor
          */
         _onPaste: function (event) {
-            if (event.data.$.clipboardData) {
+            if (event.data && event.data.$ && event.data.$.clipboardData && event.data.$.clipboardData.items && event.data.$.clipboardData.items.length > 0) {
                 var pastedData = event.data.$.clipboardData.items[0];
 
                 if (pastedData.type.indexOf('image') === 0) {
@@ -1373,13 +1522,13 @@
          * @param {Object} editor The current editor instance
          */
         init: function (editor) {
-            editor.once('contentDom', (function () {
+            editor.once('contentDom', function () {
                 var editable = editor.editable();
 
                 editable.attachListener(editable, 'keyup', this._onKeyUp, this, {
                     editor: editor
                 });
-            }).bind(this));
+            }.bind(this));
         },
 
         /**
@@ -1530,8 +1679,8 @@
             ckLink.create(content);
             this._ckLink = ckLink;
 
-            var linkNode = this._startContainer.getNext() || this._startContainer;
-            editor.fire('autolinkAdd', linkNode.getParent());
+            var linkNode = ckLink.getFromSelection();
+            editor.fire('autolinkAdd', linkNode);
 
             this._subscribeToKeyEvent(editor);
 
@@ -1607,6 +1756,165 @@
             }, 1);
         }
     });
+})();
+(function () {
+  'use strict';
+
+  if (CKEDITOR.plugins.get('ae_autolist')) {
+    return;
+  }
+
+  var KEY_BACK = 8;
+
+  var KEY_SPACE = 32;
+
+  var DEFAULT_CONFIG = [{
+    regex: /^\*$/,
+    type: 'bulletedlist'
+  }, {
+    regex: /^1\.$/,
+    type: 'numberedlist'
+  }];
+
+  /**
+      * CKEditor plugin which automatically generates ordered/unordered list when user types text which looks like a list.
+      *
+      * @class CKEDITOR.plugins.ae_autolist
+      * @constructor
+      */
+  CKEDITOR.plugins.add('ae_autolist', {
+
+    /**
+    * Initialization of the plugin, part of CKeditor plugin lifecycle.
+    * The function registers the `keydown` event on the content editing area.
+    *
+    * @method init
+    * @param {Object} editor The current editor instance
+    */
+    init: function (editor) {
+      editor.once('contentDom', function () {
+        var editable = editor.editable();
+
+        editable.attachListener(editable, 'keydown', this._onKeyDown, this, {
+          editor: editor
+        });
+      }.bind(this));
+    },
+
+    /**
+    * Checks for pressing the `Backspace` key in order to undo the list creation.
+    *
+    * @protected
+    * @method _checkForBackspaceAndUndo
+    * @param {Event} event Event object
+    */
+    _checkForBackspaceAndUndo: function (event) {
+      var editor = event.listenerData.editor;
+
+      var nativeEvent = event.data.$;
+
+      var editable = editor.editable();
+
+      editable.removeListener('keydown', this._checkForBackspaceAndUndo);
+
+      if (nativeEvent.keyCode === KEY_BACK) {
+        editor.execCommand('undo');
+        editor.insertHtml(event.listenerData.bullet + '&nbsp;');
+        event.data.preventDefault();
+      }
+    },
+
+    /**
+    * Checks current line to find match with MATCHES object to create OL or UL.
+    *
+    * @protected
+    * @method _checkLine
+    * @param {editor} Editor object
+    * @return {Object|null} Returns an object which contains the detected list config if any
+    */
+    _getListConfig: function (editor) {
+      var configRegex = editor.config.autolist || DEFAULT_CONFIG;
+
+      var range = editor.getSelection().getRanges()[0];
+
+      var textContainer = range.endContainer.getText();
+
+      var bullet = textContainer.substring(0, range.startOffset);
+
+      var text = textContainer.substring(range.startOffset, textContainer.length);
+
+      var index = 0;
+
+      var regexLen = configRegex.length;
+
+      var autolistCfg = null;
+
+      while (!autolistCfg && regexLen > index) {
+        var regexItem = configRegex[index];
+
+        if (regexItem.regex.test(bullet)) {
+          autolistCfg = {
+            bullet: bullet,
+            editor: editor,
+            text: text,
+            type: regexItem.type
+          };
+
+          break;
+        }
+
+        index++;
+      }
+
+      return autolistCfg;
+    },
+
+    /**
+    * Create list with different types: Bulleted or Numbered list
+    *
+    * @protected
+    * @method _createList
+    * @param {Object} listConfig Object that contains bullet, text and type for creating the list
+    */
+    _createList: function (listConfig) {
+      var editor = listConfig.editor;
+
+      var range = editor.getSelection().getRanges()[0];
+
+      range.endContainer.setText(listConfig.text);
+      editor.execCommand(listConfig.type);
+
+      var editable = editor.editable();
+
+      // Subscribe to keydown in order to check if the next key press is `Backspace`.
+      // If so, the creation of the list will be discarded.
+      editable.attachListener(editable, 'keydown', this._checkForBackspaceAndUndo, this, {
+        editor: editor,
+        bullet: listConfig.bullet
+      }, 1);
+    },
+
+    /**
+              * Listens to the `Space` key events to check if the last word
+              * introduced by the user should be replaced by a list (OL or UL)
+              *
+              * @protected
+              * @method _onKeyDown
+              * @param {Event} event Event object
+              */
+    _onKeyDown: function (event) {
+      var nativeEvent = event.data.$;
+
+      if (nativeEvent.keyCode === KEY_SPACE) {
+        var listConfig = this._getListConfig(event.listenerData.editor);
+
+        if (listConfig) {
+          event.data.preventDefault();
+          this._createList(listConfig);
+        }
+      }
+    }
+  });
 })();
 /**
  * CKEditor plugin: Dragable image resizing
@@ -2030,15 +2338,374 @@
 (function () {
     'use strict';
 
+    /* istanbul ignore if */
+
+    if (CKEDITOR.plugins.get('ae_embed')) {
+        return;
+    }
+
+    var REGEX_HTTP = /^https?/;
+
+    CKEDITOR.DEFAULT_AE_EMBED_URL_TPL = '//alloy.iframe.ly/api/oembed?url={url}&callback={callback}';
+    CKEDITOR.DEFAULT_AE_EMBED_WIDGET_TPL = '<div data-ae-embed-url="{url}"></div>';
+
+    /**
+     * CKEditor plugin which adds the infrastructure to embed urls as media objects using an oembed
+     * service. By default, and for demoing purposes only, the oembed service is hosted in iframe.ly
+     * at //alloy.iframe.ly/api/oembed?url={url}&callback={callback}. Note this should be changed to
+     * a self-hosted or paid service in production environments. Access to the alloy.iframe.ly endpoint
+     * may be restricted per domain due to significant traffic.
+     *
+     * This plugin adds an `embedUrl` command that can be used to easily embed a URL and transform it
+     * to an embedded content.
+     *
+     * @class CKEDITOR.plugins.ae_embed
+     */
+    CKEDITOR.plugins.add('ae_embed', {
+        requires: 'widget',
+        init: function (editor) {
+            var AE_EMBED_URL_TPL = new CKEDITOR.template(editor.config.embedUrlTemplate || CKEDITOR.DEFAULT_AE_EMBED_URL_TPL);
+            var AE_EMBED_WIDGET_TPL = new CKEDITOR.template(editor.config.embedWidgetTpl || CKEDITOR.DEFAULT_AE_EMBED_WIDGET_TPL);
+
+            // Default function to upcast DOM elements to embed widgets.
+            // It matches CKEDITOR.DEFAULT_AE_EMBED_WIDGET_TPL
+            var defaultEmbedWidgetUpcastFn = function (element, data) {
+                if (element.name === 'div' && element.attributes['data-ae-embed-url']) {
+                    data.url = element.attributes['data-ae-embed-url'];
+
+                    return true;
+                }
+            };
+
+            // Create a embedUrl command that can be invoked to easily embed media URLs
+            editor.addCommand('embedUrl', {
+                exec: function (editor, data) {
+                    editor.insertHtml(AE_EMBED_WIDGET_TPL.output({
+                        url: data.url
+                    }));
+                }
+            });
+
+            // Create a widget to properly handle embed operations
+            editor.widgets.add('ae_embed', {
+                allowedContent: 'div[!data-ae-embed-url]',
+                mask: true,
+                requiredContent: 'div[data-ae-embed-url]',
+
+                /**
+                 * Listener to be executed every time the widget's data changes. It takes care of
+                 * requesting the embed object to the configured oembed service and render it in
+                 * the editor
+                 *
+                 * @method data
+                 * @param {event} event Data change event
+                 */
+                data: function (event) {
+                    var widget = this;
+                    var url = event.data.url;
+
+                    if (url) {
+                        CKEDITOR.tools.jsonp(AE_EMBED_URL_TPL, {
+                            url: encodeURIComponent(url)
+                        }, function (response) {
+                            if (response.html) {
+                                widget.element.setHtml(response.html);
+                            } else {
+                                widget.element.setHtml(url);
+                            }
+                        }, function (msg) {
+                            widget.element.setHtml(url);
+                        });
+                    }
+                },
+
+                /**
+                 * Function used to upcast an element to ae_embed widgets.
+                 *
+                 * @method upcast
+                 * @param {CKEDITOR.htmlParser.element} element The element to be checked
+                 * @param {Object} data The object that will be passed to the widget
+                 */
+                upcast: function (element, data) {
+                    var embedWidgetUpcastFn = editor.config.embedWidgetUpcastFn || defaultEmbedWidgetUpcastFn;
+
+                    return embedWidgetUpcastFn(element, data);
+                }
+            });
+
+            // Add a listener to handle paste events and turn links into embed objects
+            editor.once('contentDom', function () {
+                editor.on('paste', function (event) {
+                    var link = event.data.dataValue;
+
+                    if (REGEX_HTTP.test(link)) {
+                        event.stop();
+
+                        editor.execCommand('embedUrl', {
+                            url: event.data.dataValue
+                        });
+                    }
+                });
+            });
+
+            // Add a listener to handle selection change events and properly detect editor
+            // interactions on the widgets without messing with widget native selection
+            editor.on('selectionChange', function (event) {
+                var selection = editor.getSelection();
+
+                if (selection) {
+                    var element = selection.getSelectedElement();
+
+                    if (element) {
+                        var widgetElement = element.findOne('[data-widget="ae_embed"]');
+
+                        if (widgetElement) {
+                            var region = element.getClientRect();
+
+                            var scrollPosition = new CKEDITOR.dom.window(window).getScrollPosition();
+                            region.left -= scrollPosition.x;
+                            region.top += scrollPosition.y;
+
+                            region.direction = CKEDITOR.SELECTION_BOTTOM_TO_TOP;
+
+                            editor.fire('editorInteraction', {
+                                nativeEvent: {},
+                                selectionData: {
+                                    element: widgetElement,
+                                    region: region
+                                }
+                            });
+                        }
+                    }
+                }
+            });
+
+            // Add a filter to skip filtering widget elements
+            editor.filter.addElementCallback(function (element) {
+                if ('data-ae-embed-url' in element.attributes) {
+                    return CKEDITOR.FILTER_SKIP_TREE;
+                }
+            });
+        }
+    });
+})();
+(function () {
+    'use strict';
+
+    if (CKEDITOR.plugins.get('ae_imagealignment')) {
+        return;
+    }
+
+    /**
+     * Enum for supported image alignments
+     * @type {Object}
+     */
+    var IMAGE_ALIGNMENT = {
+        CENTER: 'center',
+        LEFT: 'left',
+        RIGHT: 'right'
+    };
+
+    /**
+     * Enum values for supported image alignments
+     * @type {Array}
+     */
+    var ALIGN_VALUES = [IMAGE_ALIGNMENT.LEFT, IMAGE_ALIGNMENT.RIGHT, IMAGE_ALIGNMENT.CENTER];
+
+    /**
+     * Necessary styles for the center alignment
+     * @type {Array.<Object>}
+     */
+    var CENTERED_IMAGE_STYLE = [{
+        name: 'display',
+        value: 'block'
+    }, {
+        name: 'margin-left',
+        value: '50%'
+    }, {
+        name: 'transform',
+        value: 'translateX(-50%)',
+        vendorPrefixes: ['-ms-']
+    }];
+
+    /**
+     * Retrieves the alignment value of an image.
+     *
+     * @param {CKEDITOR.dom.element} image The image element
+     * @return {String} The alignment value
+     */
+    var getImageAlignment = function (image) {
+        var imageAlignment = image.getStyle('float');
+
+        if (!imageAlignment || imageAlignment === 'inherit' || imageAlignment === 'none') {
+            imageAlignment = image.getAttribute('align');
+        }
+
+        if (!imageAlignment) {
+            var centeredImage = CENTERED_IMAGE_STYLE.every(function (style) {
+                var styleCheck = image.getStyle(style.name) === style.value;
+
+                if (!styleCheck && style.vendorPrefixes) {
+                    styleCheck = style.vendorPrefixes.some(function (vendorPrefix) {
+                        return image.getStyle(vendorPrefix + style.name) === style.value;
+                    });
+                }
+
+                return styleCheck;
+            });
+
+            imageAlignment = centeredImage ? IMAGE_ALIGNMENT.CENTER : null;
+        }
+
+        return imageAlignment;
+    };
+
+    /**
+     * Removes the alignment value of an image
+     *
+     * @param {CKEDITOR.dom.element} image The image element
+     * @param {String} imageAlignment The image alignment value to be removed
+     */
+    var removeImageAlignment = function (image, imageAlignment) {
+        if (imageAlignment === IMAGE_ALIGNMENT.LEFT || imageAlignment === IMAGE_ALIGNMENT.RIGHT) {
+            image.removeStyle('float');
+
+            if (imageAlignment === getImageAlignment(image)) {
+                image.removeAttribute('align');
+            }
+        } else if (imageAlignment === IMAGE_ALIGNMENT.CENTER) {
+            CENTERED_IMAGE_STYLE.forEach(function (style) {
+                image.removeStyle(style.name);
+
+                if (style.vendorPrefixes) {
+                    style.vendorPrefixes.forEach(function (vendorPrefix) {
+                        image.removeStyle(vendorPrefix + style.name);
+                    });
+                }
+            });
+        }
+    };
+
+    /**
+     * Sets the alignment value of an image
+     *
+     * @param {CKEDITOR.dom.element} image The image element
+     * @param {String} imageAlignment The image alignment value to be set
+     */
+    var setImageAlignment = function (image, imageAlignment) {
+        removeImageAlignment(image, getImageAlignment(image));
+
+        if (imageAlignment === IMAGE_ALIGNMENT.LEFT || imageAlignment === IMAGE_ALIGNMENT.RIGHT) {
+            image.setStyle('float', imageAlignment);
+        } else if (imageAlignment === IMAGE_ALIGNMENT.CENTER) {
+            CENTERED_IMAGE_STYLE.forEach(function (style) {
+                image.setStyle(style.name, style.value);
+
+                if (style.vendorPrefixes) {
+                    style.vendorPrefixes.forEach(function (vendorPrefix) {
+                        image.setStyle(vendorPrefix + style.name, style.value);
+                    });
+                }
+            });
+        }
+    };
+
+    /**
+     * CKEditor plugin which modifies the justify commands to properly align images. This
+     * plugin is an excerpt of CKEditor's original image one that can be found at
+     * https://github.com/ckeditor/ckeditor-dev/blob/master/plugins/image/plugin.js
+     *
+     * @class CKEDITOR.plugins.ae_imagealignment
+     */
+    CKEDITOR.plugins.add('ae_imagealignment', {
+        /**
+         * Initialization of the plugin, part of CKEditor plugin lifecycle.
+         * The function registers a 'paste' event on the editing area.
+         *
+         * @method afterInit
+         * @param {Object} editor The current editor instance
+         */
+        afterInit: function (editor) {
+            var self = this;
+
+            ALIGN_VALUES.forEach(function (value) {
+                var command = editor.getCommand('justify' + value);
+
+                if (command) {
+                    command.on('exec', function (event) {
+                        var selectionData = editor.getSelectionData();
+
+                        if (selectionData && AlloyEditor.SelectionTest.image({ data: { selectionData: selectionData } })) {
+                            var image = selectionData.element;
+
+                            var imageAlignment = getImageAlignment(image);
+
+                            if (imageAlignment === value) {
+                                removeImageAlignment(image, value);
+                            } else {
+                                setImageAlignment(image, value);
+                            }
+
+                            event.cancel();
+
+                            self.refreshCommands(editor, new CKEDITOR.dom.elementPath(image));
+                        }
+                    });
+
+                    command.on('refresh', function (event) {
+                        var selectionData = editor.getSelectionData();
+
+                        if (selectionData && AlloyEditor.SelectionTest.image({ data: { selectionData: selectionData } })) {
+                            var imageAlignment = getImageAlignment(selectionData.element);
+
+                            this.setState(imageAlignment === value ? CKEDITOR.TRISTATE_ON : CKEDITOR.TRISTATE_OFF);
+
+                            event.cancel();
+                        }
+                    });
+                }
+            });
+        },
+
+        /**
+         * Forces a refresh of the modified justify commands. This is needed because the applied changes
+         * do not modify the selection, so the refresh is never triggered and the UI does not update
+         * properly until the next selectionChange event.
+         *
+         * @param {CKEDITOR.editor} editor The editor instance
+         * @param {CKEDITOR.dom.elementPath} elementPath The path of the selected image
+         */
+        refreshCommands: function (editor, elementPath) {
+            ALIGN_VALUES.forEach(function (value) {
+                var command = editor.getCommand('justify' + value);
+
+                if (command) {
+                    command.refresh(editor, elementPath);
+                }
+            });
+        }
+    });
+})();
+(function () {
+    'use strict';
+
     if (CKEDITOR.plugins.get('ae_pasteimages')) {
         return;
     }
 
     /**
      * CKEditor plugin which allows pasting images directly into the editable area. The image will be encoded
-     * as Data URI. An event `imageAdd` will be fired with the inserted element into the editable area.
+     * as Data URI. An event `beforeImageAdd` will be fired with the list of pasted images. If any of the listeners
+     * returns `false` or cancels the event, the images won't be added to the content. Otherwise,
+     * an event `imageAdd` will be fired with the inserted element into the editable area.
      *
      * @class CKEDITOR.plugins.ae_pasteimages
+     */
+
+    /**
+     * Fired before adding images to the editor.
+     * @event beforeImageAdd
+     * @param {Array} imageFiles Array of image files
      */
 
     /**
@@ -2046,6 +2713,7 @@
      *
      * @event imageAdd
      * @param {CKEDITOR.dom.element} el The created image with src as Data URI
+     * @param {File} file The image file
      */
 
     CKEDITOR.plugins.add('ae_pasteimages', {
@@ -2057,13 +2725,13 @@
          * @param {Object} editor The current editor instance
          */
         init: function (editor) {
-            editor.once('contentDom', (function () {
+            editor.once('contentDom', function () {
                 var editable = editor.editable();
 
                 editable.attachListener(editable, 'paste', this._onPaste, this, {
                     editor: editor
                 });
-            }).bind(this));
+            }.bind(this));
         },
 
         /**
@@ -2086,18 +2754,24 @@
                     var reader = new FileReader();
                     var imageFile = pastedData.getAsFile();
 
-                    reader.onload = (function (event) {
-                        var el = CKEDITOR.dom.element.createFromHtml('<img src="' + event.target.result + '">');
+                    reader.onload = function (event) {
+                        var result = editor.fire('beforeImageAdd', {
+                            imageFiles: imageFile
+                        });
 
-                        editor.insertElement(el);
+                        if (!!result) {
+                            var el = CKEDITOR.dom.element.createFromHtml('<img src="' + event.target.result + '">');
 
-                        var imageData = {
-                            el: el,
-                            file: imageFile
-                        };
+                            editor.insertElement(el);
 
-                        editor.fire('imageAdd', imageData);
-                    }).bind(this);
+                            var imageData = {
+                                el: el,
+                                file: imageFile
+                            };
+
+                            editor.fire('imageAdd', imageData);
+                        }
+                    }.bind(this);
 
                     reader.readAsDataURL(imageFile);
                 }
@@ -2162,6 +2836,52 @@
                 editorNode.setHtml('');
 
                 editorNode.addClass(editor.config.placeholderClass);
+            }
+        }
+    });
+})();
+(function () {
+    'use strict';
+
+    if (CKEDITOR.plugins.get('ae_selectionkeystrokes')) {
+        return;
+    }
+
+    /**
+     * CKEditor plugin that simulates editor interaction events based on manual keystrokes. This
+     * can be used to trigger different reactions in the editor.
+     *
+     * @class CKEDITOR.plugins.ae_selectionkeystrokes
+     */
+    CKEDITOR.plugins.add('ae_selectionkeystrokes', {
+        requires: 'ae_selectionregion',
+
+        /**
+         * Initialization of the plugin, part of CKEditor plugin lifecycle.
+         * The function adds a command to the editor for every defined selectionKeystroke
+         * in the configuration and maps it to the specified keystroke.
+         *
+         * @method init
+         * @param {Object} editor The current editor instance
+         */
+        init: function (editor) {
+            if (editor.config.selectionKeystrokes) {
+                editor.config.selectionKeystrokes.forEach(function (selectionKeystroke) {
+                    var command = new CKEDITOR.command(editor, {
+                        exec: function (editor) {
+                            editor.fire('editorInteraction', {
+                                manualSelection: selectionKeystroke.selection,
+                                nativeEvent: {},
+                                selectionData: editor.getSelectionData()
+                            });
+                        }
+                    });
+
+                    var commandName = 'selectionKeystroke' + selectionKeystroke.selection;
+
+                    editor.addCommand(commandName, command);
+                    editor.setKeystroke(selectionKeystroke.keys, commandName);
+                });
             }
         }
     });
@@ -3007,7 +3727,7 @@
 		    lastRowIndex = startRow,
 		    totalRowSpan = 0,
 		    totalColSpan = 0,
-		   
+
 		// Use a documentFragment as buffer when appending cell contents.
 		frag = !isDetect && new CKEDITOR.dom.documentFragment(doc),
 		    dimension = 0;
@@ -3030,7 +3750,7 @@
 
 			if (!isDetect) {
 				// Trim all cell fillers and check to remove empty cells.
-				if ((trimCell(cell), cell.getChildren().count())) {
+				if (trimCell(cell), cell.getChildren().count()) {
 					// Merge vertically cells as two separated paragraphs.
 					if (rowIndex != lastRowIndex && cellFirstChild && !(cellFirstChild.isBlockBoundary && cellFirstChild.isBlockBoundary({ br: 1 }))) {
 						var last = frag.getLast(CKEDITOR.dom.walker.whitespaces(true));
