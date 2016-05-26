@@ -1,17 +1,18 @@
 (function () {
     'use strict';
 
-    var KEY_ENTER = 13;
-    var KEY_ESC = 27;
-
     /**
      * The ButtonLinkEdit class provides functionality for creating and editing a link in a document.
      * Provides UI for creating, editing and removing a link.
      *
+     * @uses WidgetDropdown
+     * @uses WidgetFocusManager
+     * @uses ButtonCfgProps
+     *
      * @class ButtonLinkEdit
      */
     var ButtonLinkEdit = React.createClass({
-        mixins: [AlloyEditor.WidgetDropdown],
+        mixins: [AlloyEditor.WidgetDropdown, AlloyEditor.WidgetFocusManager, AlloyEditor.ButtonCfgProps],
 
         // Allows validating props being passed to the component.
         propTypes: {
@@ -23,6 +24,13 @@
             allowedTargets: React.PropTypes.arrayOf(React.PropTypes.object),
 
             /**
+             * Indicate if we add http:// protocol to link or not
+             *
+             * @property {Boolean} appendProtocol
+             */
+             appendProtocol: React.PropTypes.bool,
+
+            /**
              * The editor instance where the component is being used.
              *
              * @property {Object} editor
@@ -30,11 +38,32 @@
             editor: React.PropTypes.object.isRequired,
 
             /**
+             * Default value of the link target attribute.
+             *
+             * @property {String} defaultLinkTarget
+             */
+            defaultLinkTarget: React.PropTypes.string,
+
+            /**
              * Indicates whether the link target selector should appear.
              *
              * @property {Boolean} showTargetSelector
              */
-            showTargetSelector: React.PropTypes.bool
+            showTargetSelector: React.PropTypes.bool,
+
+            /**
+             * List of items to be rendered as possible values for the link or a function, which is
+             * supposed to retrieve the data. The function should return a Promise.
+             * The returned items must be objects with at least two properties:
+             * - title
+             * - url
+             *
+             * @property {Function|Array} data
+             */
+            data: React.PropTypes.oneOfType([
+                React.PropTypes.func,
+                React.PropTypes.arrayOf(React.PropTypes.object)
+            ])
         },
 
         // Lifecycle. Provides static properties to the widget.
@@ -58,14 +87,10 @@
          * @method componentDidMount
          */
         componentDidMount: function () {
-            if (this.state.requestExclusive) {
+            if (this.props.renderExclusive || this.props.manualSelection) {
                 // We need to wait for the next rendering cycle before focusing to avoid undesired
                 // scrolls on the page
-                if (window.requestAnimationFrame) {
-                    window.requestAnimationFrame(this._focusLinkInput);
-                } else {
-                    setTimeout(this._focusLinkInput, 0);
-                }
+                this._focusLinkInput();
             }
         },
 
@@ -87,7 +112,20 @@
          */
         getDefaultProps: function() {
             return {
-                showTargetSelector: true
+                defaultLinkTarget: '',
+                showTargetSelector: true,
+                appendProtocol: true,
+                autocompleteUrl: '',
+                circular: true,
+                descendants: '.ae-toolbar-element',
+                keys: {
+                    dismiss: [27],
+                    dismissNext: [39],
+                    dismissPrev: [37],
+                    next: [40],
+                    prev: [38]
+                },
+                customIndexStart: true
             };
         },
 
@@ -100,9 +138,10 @@
         getInitialState: function() {
             var link = new CKEDITOR.Link(this.props.editor.get('nativeEditor')).getFromSelection();
             var href = link ? link.getAttribute('href') : '';
-            var target = link ? link.getAttribute('target') : '';
+            var target = link ? link.getAttribute('target') : this.props.defaultLinkTarget;
 
             return {
+                autocompleteSelected: false,
                 element: link,
                 initialLink: {
                     href: href,
@@ -124,20 +163,40 @@
                 opacity: this.state.linkHref ? 1 : 0
             };
 
-            var targetSelector;
+            var targetSelector = {
+                editor: this.props.editor,
+                handleLinkTargetChange: this._handleLinkTargetChange,
+                selectedTarget: this.state.linkTarget || AlloyEditor.Strings.linkTargetDefault
+            };
 
-            if (this.props.showTargetSelector) {
-                var targetSelectorProps = {
-                    allowedTargets: this._getAllowedTargetItems(),
+            targetSelector = this.mergeDropdownProps(targetSelector, AlloyEditor.ButtonLinkTargetEdit.key);
+
+            var autocompleteDropdown;
+
+            if (this.props.data) {
+                var dataFn = this.props.data;
+
+                if (!AlloyEditor.Lang.isFunction(dataFn)) {
+                    var items = this.props.data;
+
+                    dataFn = function(term) {
+                        return items;
+                    };
+                }
+
+                var autocompleteDropdownProps = {
+                    data: dataFn,
                     editor: this.props.editor,
-                    handleLinkTargetChange: this._handleLinkTargetChange,
+                    handleLinkAutocompleteClick: this._handleLinkAutocompleteClick,
                     onDismiss: this.props.toggleDropdown,
-                    selectedTarget: this.state.linkTarget || AlloyEditor.Strings.linkTargetDefault
+                    term: this.state.linkHref,
+                    autocompleteSelected: this.state.autocompleteSelected,
+                    setAutocompleteState: this._setAutocompleteState
                 };
 
-                targetSelectorProps = this.mergeDropdownProps(targetSelectorProps, AlloyEditor.ButtonLinkTargetEdit.key);
+                autocompleteDropdownProps = this.mergeDropdownProps(autocompleteDropdownProps, AlloyEditor.ButtonLinkAutocompleteList.key);
 
-                targetSelector = <AlloyEditor.ButtonLinkTargetEdit {...targetSelectorProps} />;
+                autocompleteDropdown = <AlloyEditor.ButtonLinkAutocompleteList {...autocompleteDropdownProps} />;
             }
 
             return (
@@ -146,8 +205,11 @@
                         <span className="ae-icon-unlink"></span>
                     </button>
                     <div className="ae-container-input xxl">
-                        {targetSelector}
-                        <input className="ae-input" onChange={this._handleLinkHrefChange} onKeyDown={this._handleKeyDown} placeholder={AlloyEditor.Strings.editLink} ref="linkInput" type="text" value={this.state.linkHref}></input>
+                        <AlloyEditor.ButtonLinkTargetEdit {...targetSelector} />
+                        <div className="ae-container-input xxl">
+                            <input className="ae-input" onChange={this._handleLinkHrefChange} onKeyDown={this._handleKeyDown} placeholder={AlloyEditor.Strings.editLink} ref="linkInput" type="text" value={this.state.linkHref}></input>
+                            {autocompleteDropdown}
+                        </div>
                         <button aria-label={AlloyEditor.Strings.clearInput} className="ae-button ae-icon-remove" onClick={this._clearLink} style={clearLinkStyle} title={AlloyEditor.Strings.clear}></button>
                     </div>
                     <button aria-label={AlloyEditor.Strings.confirm} className="ae-button" disabled={!this._isValidState()} onClick={this._updateLink} title={AlloyEditor.Strings.confirm}>
@@ -178,32 +240,18 @@
          * @method _focusLinkInput
          */
         _focusLinkInput: function() {
-            ReactDOM.findDOMNode(this.refs.linkInput).focus();
-        },
+            var instance = this;
 
-        /**
-         * Returns an array of allowed target items. Each item consists of two properties:
-         * - label - the label for the item, for example "_self (same tab)"
-         * - value - the value that will be set for the link target attribute
-         *
-         * @method _getALlowedTargetItems
-         * @protected
-         * @return {Array<object>} An array of objects containing the allowed items.
-         */
-        _getAllowedTargetItems: function() {
-            return this.props.allowedLinkTargets || [{
-                label: AlloyEditor.Strings.linkTargetSelf,
-                value: '_self'
-            }, {
-                label: AlloyEditor.Strings.linkTargetBlank,
-                value: '_blank'
-            }, {
-                label: AlloyEditor.Strings.linkTargetParent,
-                value: '_parent'
-            }, {
-                label: AlloyEditor.Strings.linkTargetTop,
-                value: '_top'
-            }];
+            var focusLinkEl = function() {
+                ReactDOM.findDOMNode(instance.refs.linkInput).focus();
+            };
+
+            if (window.requestAnimationFrame) {
+                window.requestAnimationFrame(focusLinkEl);
+            } else {
+                setTimeout(focusLinkEl, 0);
+            }
+
         },
 
         /**
@@ -216,16 +264,22 @@
          * @param {SyntheticEvent} event The keyboard event.
          */
         _handleKeyDown: function(event) {
-            if (event.keyCode === KEY_ENTER || event.keyCode === KEY_ESC) {
+            if (event.keyCode === 13 || event.keyCode === 27) {
                 event.preventDefault();
             }
 
-            if (event.keyCode === KEY_ENTER) {
+            if (event.keyCode === 13) {
                 this._updateLink();
-            } else if (event.keyCode === KEY_ESC) {
-                this.props.cancelExclusive();
+            } else if (event.keyCode === 40) {
+                this.setState({
+                    autocompleteSelected: true
+                });
+            } else if (event.keyCode === 27) {
+                var editor = this.props.editor.get('nativeEditor');
 
-                this.props.editor.get('nativeEditor').focus();
+                new CKEDITOR.Link(editor).advanceSelection();
+
+                this.props.editor.get('nativeEditor').fire('actionPerformed', this);
             }
         },
 
@@ -240,6 +294,8 @@
             this.setState({
                 linkHref: event.target.value
             });
+
+            this._focusLinkInput();
         },
 
         /**
@@ -254,60 +310,24 @@
                 itemDropdown: null,
                 linkTarget: event.target.getAttribute('data-value')
             });
+
+            this._focusLinkInput();
         },
 
         /**
-         * Removes the link in the editor element.
+         * Updates the component state when an autocomplete link result is selected by user interaction.
          *
          * @protected
-         * @method _removeLink
+         * @method _handleLinkAutocompleteClick
+         * @param {SyntheticEvent} event The click event.
          */
-        _removeLink: function() {
-            var editor = this.props.editor.get('nativeEditor');
-            var linkUtils = new CKEDITOR.Link(editor);
-            var selection = editor.getSelection();
-            var bookmarks = selection.createBookmarks();
+        _handleLinkAutocompleteClick: function(event) {
+            this.setState({
+                itemDropdown: null,
+                linkHref: event.target.getAttribute('data-value')
+            });
 
-            linkUtils.remove(this.state.element);
-
-            selection.selectBookmarks(bookmarks);
-
-            // We need to cancelExclusive with the bound parameters in case the button is used
-            // inside another in exclusive mode (such is the case of the link button)
-            this.props.cancelExclusive();
-
-            editor.fire('actionPerformed', this);
-        },
-
-        /**
-         * Updates the link in the editor element. If the element didn't exist previously, it will
-         * create a new <a> element with the href specified in the link input.
-         *
-         * @protected
-         * @method _updateLink
-         */
-        _updateLink: function() {
-            var editor = this.props.editor.get('nativeEditor');
-            var linkUtils = new CKEDITOR.Link(editor);
-            var linkAttrs = {
-                target: this.state.linkTarget
-            };
-
-            if (this.state.linkHref) {
-                if (this.state.element) {
-                    linkAttrs.href = this.state.linkHref;
-
-                    linkUtils.update(linkAttrs, this.state.element);
-                } else {
-                    linkUtils.create(this.state.linkHref, linkAttrs);
-                }
-
-                editor.fire('actionPerformed', this);
-            }
-
-            // We need to cancelExclusive with the bound parameters in case the button is used
-            // inside another in exclusive mode (such is the case of the link button)
-            this.props.cancelExclusive();
+            this._focusLinkInput();
         },
 
         /**
@@ -327,6 +347,73 @@
                 );
 
             return validState;
+        },
+
+        /**
+         * Removes the link in the editor element.
+         *
+         * @protected
+         * @method _removeLink
+         */
+        _removeLink: function() {
+            var editor = this.props.editor.get('nativeEditor');
+            var linkUtils = new CKEDITOR.Link(editor);
+            var selection = editor.getSelection();
+            var bookmarks = selection.createBookmarks();
+
+            linkUtils.remove(this.state.element, { advance: true });
+
+            selection.selectBookmarks(bookmarks);
+
+            // We need to cancelExclusive with the bound parameters in case the button is used
+            // inside another in exclusive mode (such is the case of the link button)
+            this.props.cancelExclusive();
+
+            editor.fire('actionPerformed', this);
+        },
+
+        /**
+         * Update autocompleteSelected state to focus and select autocomplete´s dropdown
+         *
+         * @protected
+         * @method _setAutocompleteState
+         */
+        _setAutocompleteState: function(state) {
+            this.setState({
+                autocompleteSelected: state.selected
+            });
+        },
+
+        /**
+         * Updates the link in the editor element. If the element didn't exist previously, it will
+         * create a new <a> element with the href specified in the link input.
+         *
+         * @protected
+         * @method _updateLink
+         */
+        _updateLink: function() {
+            var editor = this.props.editor.get('nativeEditor');
+            var linkUtils = new CKEDITOR.Link(editor, {appendProtocol: this.props.appendProtocol});
+            var linkAttrs = {
+                target: this.state.linkTarget
+            };
+            var modifySelection = { advance: true };
+
+            if (this.state.linkHref) {
+                if (this.state.element) {
+                    linkAttrs.href = this.state.linkHref;
+
+                    linkUtils.update(linkAttrs, this.state.element, modifySelection);
+                } else {
+                    linkUtils.create(this.state.linkHref, linkAttrs, modifySelection);
+                }
+
+                editor.fire('actionPerformed', this);
+            }
+
+            // We need to cancelExclusive with the bound parameters in case the button is used
+            // inside another in exclusive mode (such is the case of the link button)
+            this.props.cancelExclusive();
         }
     });
 

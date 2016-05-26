@@ -9,9 +9,17 @@
 
     /**
      * CKEditor plugin which allows Drag&Drop of images directly into the editable area. The image will be encoded
-     * as Data URI. An event `imageAdd` will be fired with the inserted element into the editable area.
+     * as Data URI. An event `beforeImageAdd` will be fired with the list of dropped images. If any of the listeners
+     * returns `false` or cancels the event, the images won't be added to the content. Otherwise,
+     * an event `imageAdd` will be fired with the inserted element into the editable area.
      *
      * @class CKEDITOR.plugins.ae_addimages
+     */
+
+    /**
+     * Fired before adding images to the editor.
+     * @event beforeImageAdd
+     * @param {Array} imageFiles Array of image files
      */
 
     /**
@@ -19,6 +27,7 @@
      *
      * @event imageAdd
      * @param {CKEDITOR.dom.element} el The created image with src as Data URI
+     * @param {File} file The image file
      */
 
     CKEDITOR.plugins.add(
@@ -62,15 +71,53 @@
              * @param {Object} editor The current editor instance
              */
             _handleFiles: function(files, editor) {
-                for (var i = 0; i < files.length; i++) {
-                    var file = files[i];
+                var file;
+                var i;
+
+                var imageFiles = [];
+
+                for (i = 0; i < files.length; i++) {
+                    file = files[i];
 
                     if (file.type.indexOf('image') === 0) {
+                        imageFiles.push(file);
+                    }
+                }
+
+                var result = editor.fire('beforeImageAdd', {
+                    imageFiles: imageFiles
+                });
+
+                if (!!result) {
+                    for (i = 0; i < files.length; i++) {
+                        file = files[i];
+
                         this._processFile(file, editor);
                     }
                 }
 
                 return false;
+            },
+
+            /**
+             * Handles drag drop event. The function will create a selection from the current
+             * point and will send a list of files to be processed to
+             * {{#crossLink "CKEDITOR.plugins.ae_addimages/_handleFiles:method"}}{{/crossLink}} method.
+             *
+             * @protected
+             * @method _onDragDrop
+             * @param {CKEDITOR.dom.event} event dragdrop event, as received natively from CKEditor
+             */
+            _onDragDrop: function(event) {
+                var nativeEvent = event.data.$;
+
+                new CKEDITOR.dom.event(nativeEvent).preventDefault();
+
+                var editor = event.listenerData.editor;
+
+                event.listenerData.editor.createSelectionFromPoint(nativeEvent.clientX, nativeEvent.clientY);
+
+                this._handleFiles(nativeEvent.dataTransfer.files, editor);
             },
 
             /**
@@ -100,27 +147,6 @@
             },
 
             /**
-             * Handles drag drop event. The function will create selection from the current points and
-             * will send a list of files to be processed to
-             * {{#crossLink "CKEDITOR.plugins.ae_addimages/_handleFiles:method"}}{{/crossLink}}
-             *
-             * @protected
-             * @method _onDragDrop
-             * @param {CKEDITOR.dom.event} event dragdrop event, as received natively from CKEditor
-             */
-            _onDragDrop: function(event) {
-                var nativeEvent = event.data.$;
-
-                new CKEDITOR.dom.event(nativeEvent).preventDefault();
-
-                var editor = event.listenerData.editor;
-
-                event.listenerData.editor.createSelectionFromPoint(nativeEvent.clientX, nativeEvent.clientY);
-
-                this._handleFiles(nativeEvent.dataTransfer.files, editor);
-            },
-
-            /**
              * Checks if the pasted data is image and passes it to
              * {{#crossLink "CKEDITOR.plugins.ae_addimages/_processFile:method"}}{{/crossLink}} for processing.
              *
@@ -129,7 +155,7 @@
              * @param {CKEDITOR.dom.event} event A `paste` event, as received natively from CKEditor
              */
             _onPaste: function(event) {
-                if (event.data.$.clipboardData) {
+                if (event.data && event.data.$ && event.data.$.clipboardData && event.data.$.clipboardData.items && event.data.$.clipboardData.items.length > 0) {
                     var pastedData = event.data.$.clipboardData.items[0];
 
                     if (pastedData.type.indexOf('image') === 0) {

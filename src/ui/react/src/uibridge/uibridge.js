@@ -1,6 +1,11 @@
 (function() {
     'use strict';
 
+    /* istanbul ignore if */
+    if(CKEDITOR.plugins.get('ae_uibridge')) {
+        return;
+    }
+
     /**
      * CKEditor plugin that extends CKEDITOR.ui.add function so an add handler can be specified
      * on top of the original ones. It bridges the calls to add components via:
@@ -25,7 +30,7 @@
                 var typeHandler = this._.handlers[type];
 
                 if (typeHandler && typeHandler.add) {
-                    typeHandler.add(name, definition);
+                    typeHandler.add(name, definition, editor);
                 }
             };
         }

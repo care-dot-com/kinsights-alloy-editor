@@ -31,7 +31,7 @@
                 <li class="divider-vertical"></li>
                 <li>
                     <p class="navbar-text">
-                        API Docs for Version: <b>0.7.0</b>
+                        API Docs for Version: <b>1.2.2</b>
                     </p>
                 </li>
             </div>
@@ -63,11 +63,15 @@
                                     <li><a href="../classes/ButtonBold.html">ButtonBold</a></li>
                                     <li><a href="../classes/ButtonCamera.html">ButtonCamera</a></li>
                                     <li><a href="../classes/ButtonCameraImage.html">ButtonCameraImage</a></li>
+                                    <li><a href="../classes/ButtonCfgProps.html">ButtonCfgProps</a></li>
                                     <li><a href="../classes/ButtonCode.html">ButtonCode</a></li>
                                     <li><a href="../classes/ButtonCommand.html">ButtonCommand</a></li>
+                                    <li><a href="../classes/ButtonCommandActive.html">ButtonCommandActive</a></li>
                                     <li><a href="../classes/ButtonCommandListItem.html">ButtonCommandListItem</a></li>
                                     <li><a href="../classes/ButtonCommandsList.html">ButtonCommandsList</a></li>
                                     <li><a href="../classes/ButtonDropdown.html">ButtonDropdown</a></li>
+                                    <li><a href="../classes/ButtonEmbed.html">ButtonEmbed</a></li>
+                                    <li><a href="../classes/ButtonEmbedEdit.html">ButtonEmbedEdit</a></li>
                                     <li><a href="../classes/ButtonH1.html">ButtonH1</a></li>
                                     <li><a href="../classes/ButtonH2.html">ButtonH2</a></li>
                                     <li><a href="../classes/ButtonHline.html">ButtonHline</a></li>
@@ -75,11 +79,15 @@
                                     <li><a href="../classes/ButtonImageAlignCenter.html">ButtonImageAlignCenter</a></li>
                                     <li><a href="../classes/ButtonImageAlignLeft.html">ButtonImageAlignLeft</a></li>
                                     <li><a href="../classes/ButtonImageAlignRight.html">ButtonImageAlignRight</a></li>
+                                    <li><a href="../classes/ButtonIndentBlock.html">ButtonIndentBlock</a></li>
                                     <li><a href="../classes/ButtonItalic.html">ButtonItalic</a></li>
+                                    <li><a href="../classes/ButtonKeystroke.html">ButtonKeystroke</a></li>
                                     <li><a href="../classes/ButtonLink.html">ButtonLink</a></li>
+                                    <li><a href="../classes/ButtonLinkAutocompleteList.html">ButtonLinkAutocompleteList</a></li>
                                     <li><a href="../classes/ButtonLinkEdit.html">ButtonLinkEdit</a></li>
                                     <li><a href="../classes/ButtonLinkTargetEdit.html">ButtonLinkTargetEdit</a></li>
                                     <li><a href="../classes/ButtonOrderedList.html">ButtonOrderedList</a></li>
+                                    <li><a href="../classes/ButtonOutdentBlock.html">ButtonOutdentBlock</a></li>
                                     <li><a href="../classes/ButtonParagraphAlignLeft.html">ButtonParagraphAlignLeft</a></li>
                                     <li><a href="../classes/ButtonParagraphAlignRight.html">ButtonParagraphAlignRight</a></li>
                                     <li><a href="../classes/ButtonParagraphCenter.html">ButtonParagraphCenter</a></li>
@@ -103,6 +111,7 @@
                                     <li><a href="../classes/ButtonTableHeading.html">ButtonTableHeading</a></li>
                                     <li><a href="../classes/ButtonTableRemove.html">ButtonTableRemove</a></li>
                                     <li><a href="../classes/ButtonTableRow.html">ButtonTableRow</a></li>
+                                    <li><a href="../classes/ButtonTargetList.html">ButtonTargetList</a></li>
                                     <li><a href="../classes/ButtonTwitter.html">ButtonTwitter</a></li>
                                     <li><a href="../classes/ButtonUnderline.html">ButtonUnderline</a></li>
                                     <li><a href="../classes/ButtonUnorderedlist.html">ButtonUnorderedlist</a></li>
@@ -174,6 +183,9 @@
                             (function () {
                                 &#x27;use strict&#x27;;
                             
+                                var POSITION_LEFT = 1;
+                                var POSITION_RIGHT = 2;
+                            
                                 /**
                                  * The ToolbarAdd class provides functionality for adding content to the editor.
                                  *
@@ -234,6 +246,15 @@
                                         onDismiss: React.PropTypes.func,
                             
                                         /**
+                                         * Whether the Toolbar should be shown on left or on right of the editable area. Could be one of these:
+                                         * - ToolbarAdd.left
+                                         * - ToolbarAdd.right
+                                         *
+                                         * @property {Enum} position
+                                         */
+                                        position: React.PropTypes.oneOf([POSITION_LEFT, POSITION_RIGHT]),
+                            
+                                        /**
                                          * The data, returned from {{#crossLink &quot;CKEDITOR.plugins.selectionregion/getSelectionData:method&quot;}}{{/crossLink}}
                                          *
                                          * @property {Object} selectionData
@@ -250,7 +271,25 @@
                                          * @property {String} key
                                          * @default add
                                          */
-                                        key: &#x27;add&#x27;
+                                        key: &#x27;add&#x27;,
+                            
+                                        /**
+                                         * Defines the constant for positioning the Toolbar on left of the editable area.
+                                         *
+                                         * @static
+                                         * @property {String} left
+                                         * @default 1
+                                         */
+                                        left: POSITION_LEFT,
+                            
+                                        /**
+                                         * Defines the constant for positioning the Toolbar on right of the editable area.
+                                         *
+                                         * @static
+                                         * @property {String} right
+                                         * @default 2
+                                         */
+                                        right: POSITION_RIGHT
                                     },
                             
                                     /**
@@ -271,7 +310,8 @@
                                                 dismiss: [27],
                                                 next: [39, 40],
                                                 prev: [37, 38]
-                                            }
+                                            },
+                                            position: POSITION_LEFT
                                         };
                                     },
                             
@@ -311,7 +351,17 @@
                                      * @return {Object|null} The content which should be rendered.
                                      */
                                     render: function() {
-                                        if (this.props.editorEvent &amp;&amp; !this.props.editorEvent.data.nativeEvent.target.isContentEditable) {
+                                        // Some operations such as &#x60;requestExclusive&#x60; may force editor to blur which will
+                                        // invalidate the &#x60;props.editorEvent&#x60; stored value, without causing a &#x60;props&#x60; change.
+                                        // For example, if the editor is empty, &#x60;ae_placeholder&#x60; plugin will remove
+                                        // the target from the DOM and will prevent &#x60;add&#x60; toolbar from rendering.
+                                        //
+                                        // It should be safe to assume that if you have been able to render the toolbar
+                                        // and request the exclusive mode, then rendering might be kept until the exclusive mode is left.
+                                        if (!this.state.itemExclusive &amp;&amp;
+                                                this.props.editorEvent &amp;&amp;
+                                                this.props.editorEvent.data.nativeEvent.target &amp;&amp;
+                                                !this.props.editorEvent.data.nativeEvent.target.isContentEditable) {
                                             return null;
                                         }
                             
@@ -376,6 +426,8 @@
                                      * @method _updatePosition
                                      */
                                     _updatePosition: function() {
+                                        var region;
+                            
                                         // If component is not mounted, there is nothing to do
                                         if (!ReactDOM.findDOMNode(this)) {
                                             return;
@@ -384,9 +436,6 @@
                                         if (this.props.renderExclusive) {
                                             this.updatePosition();
                                             this.show();
-                            
-                                        var region;
-                            
                                         } else {
                                             if (this.props.selectionData) {
                                                 region = this.props.selectionData.region;
@@ -397,9 +446,19 @@
                                                 var domElement = new CKEDITOR.dom.element(domNode);
                             
                                                 var startRect = region.startRect || region;
-                                                var left = this.props.editor.get(&#x27;nativeEditor&#x27;).editable().getClientRect().left;
+                                                var clientRect = this.props.editor.get(&#x27;nativeEditor&#x27;).editable().getClientRect();
                             
-                                                domNode.style.left = left - domNode.offsetWidth - this.props.gutterExclusive.left + &#x27;px&#x27;;
+                                                var offsetLeft;
+                            
+                                                var position = this.props.config.position || this.props.position;
+                            
+                                                if (position === POSITION_LEFT) {
+                                                    offsetLeft = clientRect.left - domNode.offsetWidth - this.props.gutterExclusive.left + &#x27;px&#x27;;
+                                                } else {
+                                                    offsetLeft = clientRect.right + this.props.gutterExclusive.left + &#x27;px&#x27;;
+                                                }
+                            
+                                                domNode.style.left = offsetLeft;
                                                 domNode.style.top = Math.floor(region.top - domNode.offsetHeight/2 + startRect.height/2) + &#x27;px&#x27;;
                                                 domNode.style.opacity = 1;
                             

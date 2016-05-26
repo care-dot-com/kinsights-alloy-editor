@@ -1,6 +1,9 @@
 (function () {
     'use strict';
 
+    var POSITION_LEFT = 1;
+    var POSITION_RIGHT = 2;
+
     /**
      * The ToolbarAdd class provides functionality for adding content to the editor.
      *
@@ -61,6 +64,15 @@
             onDismiss: React.PropTypes.func,
 
             /**
+             * Whether the Toolbar should be shown on left or on right of the editable area. Could be one of these:
+             * - ToolbarAdd.left
+             * - ToolbarAdd.right
+             *
+             * @property {Enum} position
+             */
+            position: React.PropTypes.oneOf([POSITION_LEFT, POSITION_RIGHT]),
+
+            /**
              * The data, returned from {{#crossLink "CKEDITOR.plugins.selectionregion/getSelectionData:method"}}{{/crossLink}}
              *
              * @property {Object} selectionData
@@ -77,7 +89,25 @@
              * @property {String} key
              * @default add
              */
-            key: 'add'
+            key: 'add',
+
+            /**
+             * Defines the constant for positioning the Toolbar on left of the editable area.
+             *
+             * @static
+             * @property {String} left
+             * @default 1
+             */
+            left: POSITION_LEFT,
+
+            /**
+             * Defines the constant for positioning the Toolbar on right of the editable area.
+             *
+             * @static
+             * @property {String} right
+             * @default 2
+             */
+            right: POSITION_RIGHT
         },
 
         /**
@@ -98,7 +128,8 @@
                     dismiss: [27],
                     next: [39, 40],
                     prev: [37, 38]
-                }
+                },
+                position: POSITION_LEFT
             };
         },
 
@@ -138,7 +169,17 @@
          * @return {Object|null} The content which should be rendered.
          */
         render: function() {
-            if (this.props.editorEvent && !this.props.editorEvent.data.nativeEvent.target.isContentEditable) {
+            // Some operations such as `requestExclusive` may force editor to blur which will
+            // invalidate the `props.editorEvent` stored value, without causing a `props` change.
+            // For example, if the editor is empty, `ae_placeholder` plugin will remove
+            // the target from the DOM and will prevent `add` toolbar from rendering.
+            //
+            // It should be safe to assume that if you have been able to render the toolbar
+            // and request the exclusive mode, then rendering might be kept until the exclusive mode is left.
+            if (!this.state.itemExclusive &&
+                    this.props.editorEvent &&
+                    this.props.editorEvent.data.nativeEvent.target &&
+                    !this.props.editorEvent.data.nativeEvent.target.isContentEditable) {
                 return null;
             }
 
@@ -203,6 +244,8 @@
          * @method _updatePosition
          */
         _updatePosition: function() {
+            var region;
+
             // If component is not mounted, there is nothing to do
             if (!ReactDOM.findDOMNode(this)) {
                 return;
@@ -211,9 +254,6 @@
             if (this.props.renderExclusive) {
                 this.updatePosition();
                 this.show();
-
-            var region;
-
             } else {
                 if (this.props.selectionData) {
                     region = this.props.selectionData.region;
@@ -224,9 +264,19 @@
                     var domElement = new CKEDITOR.dom.element(domNode);
 
                     var startRect = region.startRect || region;
-                    var left = this.props.editor.get('nativeEditor').editable().getClientRect().left;
+                    var clientRect = this.props.editor.get('nativeEditor').editable().getClientRect();
 
-                    domNode.style.left = left - domNode.offsetWidth - this.props.gutterExclusive.left + 'px';
+                    var offsetLeft;
+
+                    var position = this.props.config.position || this.props.position;
+
+                    if (position === POSITION_LEFT) {
+                        offsetLeft = clientRect.left - domNode.offsetWidth - this.props.gutterExclusive.left + 'px';
+                    } else {
+                        offsetLeft = clientRect.right + this.props.gutterExclusive.left + 'px';
+                    }
+
+                    domNode.style.left = offsetLeft;
                     domNode.style.top = Math.floor(region.top - domNode.offsetHeight/2 + startRect.height/2) + 'px';
                     domNode.style.opacity = 1;
 

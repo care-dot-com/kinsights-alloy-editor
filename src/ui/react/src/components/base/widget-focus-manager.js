@@ -18,6 +18,7 @@
     var WidgetFocusManager = {
         // Allows validating props being passed to the component.
         propTypes: {
+
             /**
              * Callback method to be invoked when the focus manager is to be dismissed. This happens
              * in the following scenarios if a dismiss callback has been specified:
@@ -36,6 +37,12 @@
              * @property {boolean} circular
              */
             circular: React.PropTypes.bool.isRequired,
+
+            /**
+            * Indicate if should focus the first child of a container
+            * @property {Boolean} focusFirstChild
+            */
+            focusFirstChild: React.PropTypes.bool,
 
             /**
              * String representing the CSS selector used to define the elements that should be handled.
@@ -84,7 +91,16 @@
         focus: function(event) {
             if (!event || this._isValidTarget(event.target)) {
                 if (this._descendants) {
-                    this._descendants[this._activeDescendant].focus();
+                    var activeDescendantEl = this._descendants[this._activeDescendant];
+                    // When user clicks with the mouse, the activeElement is already set and there
+                    // is no need to focus it. Focusing of the active descendant (usually some button) is required
+                    // in case of keyboard navigation, because the focused element might be not the first button,
+                    // but the div element, which contains the button.
+                    if (document.activeElement !== activeDescendantEl && !this.props.focusFirstChild) {
+                        if (this._descendants.indexOf(document.activeElement) === -1) {
+                            activeDescendantEl.focus();
+                        }
+                    }
 
                     if (event) {
                         event.stopPropagation();

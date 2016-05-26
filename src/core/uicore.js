@@ -96,6 +96,14 @@
                     uiTasksTimeout
                 );
 
+                var handleBlur = function(event) {
+                    event.removeListener('blur', handleBlur);
+                    event.removeListener('keyup', handleUI);
+                    event.removeListener('mouseup', handleUI);
+
+                    handleUI(event);
+                };
+
                 editor.on('ariaUpdate', function(event) {
                     // handleAria is debounced function, so if it is being called multiple times, it will
                     // be canceled until some time passes.
@@ -111,8 +119,13 @@
                 editor.once('contentDom', function() {
                     var editable = editor.editable();
 
-                    editable.attachListener(editable, 'mouseup', handleUI);
-                    editable.attachListener(editable, 'keyup', handleUI);
+                    editable.attachListener(editable, 'focus', function (event) {
+                        editable.attachListener(editable, 'blur', handleBlur);
+                        editable.attachListener(editable, 'keyup', handleUI);
+                        editable.attachListener(editable, 'mouseup', handleUI);
+
+                        handleUI(event);
+                    });
                 });
 
                 editor.on('destroy', function(event) {

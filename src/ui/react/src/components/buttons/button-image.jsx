@@ -59,7 +59,7 @@
                         <span className="ae-icon-image"></span>
                     </button>
 
-                    <input onChange={this._onInputChange} ref="fileInput" style={inputSyle} type="file" />
+                    <input accept="image/*" onChange={this._onInputChange} ref="fileInput" style={inputSyle} type="file"/>
                 </div>
             );
         },
@@ -85,8 +85,16 @@
          * @method _onInputChange
          */
         _onInputChange: function() {
-            var reader = new FileReader();
             var inputEl = ReactDOM.findDOMNode(this.refs.fileInput);
+
+            // On IE11 the function might be called with an empty array of
+            // files. In such a case, no actions will be taken.
+            if (!inputEl.files.length) {
+                return;
+            }
+
+            var reader = new FileReader();
+            var file = inputEl.files[0];
 
             reader.onload = function(event) {
                 var editor = this.props.editor.get('nativeEditor');
@@ -99,13 +107,13 @@
 
                 var imageData = {
                     el: el,
-                    file: inputEl.files[0]
+                    file: file
                 };
 
                 editor.fire('imageAdd', imageData);
             }.bind(this);
 
-            reader.readAsDataURL(inputEl.files[0]);
+            reader.readAsDataURL(file);
 
             inputEl.value = '';
         }

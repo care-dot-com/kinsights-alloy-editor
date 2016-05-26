@@ -22,6 +22,7 @@
          * @param config {Object} Configuration object literal for the editor.
          */
         initializer: function(config) {
+
             var node = this.get('srcNode');
 
             if (this.get('enableContentEditable')) {
@@ -41,11 +42,17 @@
             editor.config.pasteFromWordRemoveStyles = false;
             editor.config.pasteFromWordRemoveFontStyles = false;
 
+            editor.config.selectionKeystrokes = this.get('selectionKeystrokes');
+
             AlloyEditor.Lang.mix(editor.config, config);
 
             editor.once('contentDom', function() {
-                editor.editable().addClass('ae-editable');
-            });
+                var editable = editor.editable();
+
+                editable.addClass('ae-editable');
+
+                editable.editor.on('readOnly', this._onReadOnlyChangeFn.bind(this));
+            }.bind(this));
 
             AlloyEditor.loadLanguageResources(this._renderUI.bind(this));
 
@@ -84,6 +91,33 @@
         },
 
         /**
+         * Called on `click` event when the editor is in read only mode. Navigates to link's URL or opens
+         * the link in a new window.
+         *
+         * @event readOnlyClick
+         * @protected
+         * @method _defaultReadOnlyClickFn
+         * @param {Object} event The fired `click` event payload
+         */
+        _defaultReadOnlyClickFn: function(event) {
+            if (event.listenerData.editor.editable().editor.fire('readOnlyClick', event.data) !== false) {
+                var ckElement = new CKEDITOR.dom.elementPath(event.data.getTarget(), this);
+                var link = ckElement.lastElement;
+
+                if (link) {
+                    var href = link.$.attributes.href ? link.$.attributes.href.value : null;
+                    var target = link.$.attributes.target ? link.$.attributes.target.value : null;
+
+                    if (target && href) {
+                        window.open(href, target);
+                    } else if (href) {
+                        window.location.href = href;
+                    }
+                }
+            }
+        },
+
+        /**
          * Retrieves the native CKEditor instance. Having this, the developer may use the API of CKEditor OOTB.
          *
          * @protected
@@ -95,7 +129,24 @@
         },
 
         /**
-         * Renders the specified from the user toolbars
+         * Fired when readonly value is changed. Adds click event listener to handle links in readonly mode.
+         *
+         * @protected
+         * @method _onReadOnlyChange
+         * @param {Object} event The fired event
+         */
+        _onReadOnlyChangeFn: function(event) {
+            if (event.editor.readOnly) {
+                event.editor.editable().on('click', this._defaultReadOnlyClickFn, this, {
+                    editor: event.editor
+                });
+            } else {
+                event.editor.editable().removeListener('click', this._defaultReadOnlyClickFn);
+            }
+        },
+
+        /**
+         * Renders the specified from the user toolbars.
          *
          * @protected
          * @method _renderUI
@@ -220,7 +271,7 @@
              */
             extraPlugins: {
                 validator: AlloyEditor.Lang.isString,
-                value: 'ae_uicore,ae_selectionregion,ae_dragresize,ae_addimages,ae_placeholder,ae_tabletools,ae_tableresize,ae_autolink',
+                value: 'ae_uicore,ae_selectionregion,ae_selectionkeystrokes,ae_dragresize,ae_imagealignment,ae_addimages,ae_placeholder,ae_tabletools,ae_tableresize,ae_autolink,ae_embed,ae_autolist',
                 writeOnce: true
             },
 
@@ -275,6 +326,26 @@
             },
 
             /**
+             * Array of manual selection triggers. They can be configured to manually show a specific selection toolbar
+             * by forcing the selection type. A selectionKeystroke item consists of a keys property with a [CKEditor keystroke
+             * definition](http://docs.ckeditor.com/#!/api/CKEDITOR.config-cfg-keystrokes) and a selection property with
+             * the selection name to trigger.
+             *
+             * @property selectionKeystrokes
+             * @type {Array}
+             */
+            selectionKeystrokes: {
+                validator: AlloyEditor.Lang.isArray,
+                value: [{
+                    keys: CKEDITOR.CTRL + 76 /*L*/,
+                    selection: 'link'
+                }, {
+                    keys: CKEDITOR.CTRL + CKEDITOR.SHIFT + 76 /*L*/,
+                    selection: 'embed'
+                }]
+            },
+
+            /**
              * The Node ID or HTMl node, which AlloyEditor should use as an editable area.
              *
              * @property srcNode
@@ -295,7 +366,7 @@
                 validator: '_validateToolbars',
                 value: {
                     add: {
-                        buttons: ['image', 'camera', 'hline', 'table'],
+                        buttons: ['image', 'embed', 'camera', 'hline', 'table'],
                         tabIndex: 2
                     },
                     styles: {
