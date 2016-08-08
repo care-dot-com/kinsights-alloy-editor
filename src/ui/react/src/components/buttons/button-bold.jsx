@@ -5,13 +5,14 @@
      * The ButtonBold class provides functionality for styling an selection with strong (bold) style.
      *
      * @uses ButtonCommand
+     * @uses ButtonKeystroke
      * @uses ButtonStateClasses
      * @uses ButtonStyle
      *
      * @class ButtonBold
      */
     var ButtonBold = React.createClass({
-        mixins: [AlloyEditor.ButtonStyle, AlloyEditor.ButtonStateClasses, AlloyEditor.ButtonCommand],
+        mixins: [AlloyEditor.ButtonStyle, AlloyEditor.ButtonStateClasses, AlloyEditor.ButtonCommand, AlloyEditor.ButtonKeystroke],
 
         // Allows validating props being passed to the component.
         propTypes: {
@@ -59,9 +60,11 @@
         getDefaultProps: function() {
             return {
                 command: 'bold',
-                style: {
-                    element: 'strong'
-                }
+                keystroke: {
+                    fn: 'execCommand',
+                    keys: CKEDITOR.CTRL + 66 /*B*/
+                },
+                style: 'coreStyles_bold'
             };
         },
 

@@ -2,6 +2,10 @@
     'use strict';
 
     var Selections = [{
+        name: 'embed',
+        buttons: ['embedRemove','embedEdit'],
+        test: AlloyEditor.SelectionTest.embed
+    }, {
         name: 'link',
         buttons: ['linkEdit'],
         test: AlloyEditor.SelectionTest.link

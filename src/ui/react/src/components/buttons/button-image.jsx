@@ -59,7 +59,7 @@
                         <span className="ae-icon-image"></span>
                     </button>
 
-                    <input onChange={this._onInputChange} ref="fileInput" style={inputSyle} type="file" />
+                    <input accept="image/*" onChange={this._onInputChange} ref="fileInput" style={inputSyle} type="file"/>
                 </div>
             );
         },
@@ -75,9 +75,11 @@
         },
 
         /**
-         * On input change, reads the chosen file and creates an img element with src the image data as Data URI.
-         * Then, fires an {{#crossLink "ButtonImage/imageAdd:event"}}{{/crossLink}} via CKEditor's
-         * message system. The passed params will be:
+         * On input change, reads the chosen file and fires an event `beforeImageAdd` with the image which will be added
+         * to the content. The image file will be passed in the `imageFiles` property.
+         * If any of the listeners returns `false` or cancels the event, the image won't be added to the content.
+         * Otherwise, an event `imageAdd` will be fired with the inserted element into the editable area.
+         * The passed params will be:
          * - `el` - the created img element
          * - `file` - the original image file from the input element
          *
@@ -85,36 +87,59 @@
          * @method _onInputChange
          */
         _onInputChange: function() {
-            var reader = new FileReader();
             var inputEl = ReactDOM.findDOMNode(this.refs.fileInput);
+
+            // On IE11 the function might be called with an empty array of
+            // files. In such a case, no actions will be taken.
+            if (!inputEl.files.length) {
+                return;
+            }
+
+            var reader = new FileReader();
+            var file = inputEl.files[0];
 
             reader.onload = function(event) {
                 var editor = this.props.editor.get('nativeEditor');
 
-                var el = CKEDITOR.dom.element.createFromHtml('<img src="' + event.target.result + '">');
+                var result = editor.fire('beforeImageAdd', {
+                    imageFiles: file
+                });
 
-                editor.insertElement(el);
+                if (!!result) {
+                    var el = CKEDITOR.dom.element.createFromHtml('<img src="' + event.target.result + '">');
 
-                editor.fire('actionPerformed', this);
+                    editor.insertElement(el);
 
-                var imageData = {
-                    el: el,
-                    file: inputEl.files[0]
-                };
+                    editor.fire('actionPerformed', this);
 
-                editor.fire('imageAdd', imageData);
+                    var imageData = {
+                        el: el,
+                        file: file
+                    };
+
+
+                    editor.fire('imageAdd', imageData);
+                }
             }.bind(this);
 
-            reader.readAsDataURL(inputEl.files[0]);
+            reader.readAsDataURL(file);
 
             inputEl.value = '';
         }
 
         /**
-         * Fired when an image file is added as an element to the editor.
+         * Fired before adding images to the editor.
+         *
+         * @event beforeImageAdd
+         * @param {Array} imageFiles Array of image files
+         */
+
+        /**
+         * Fired when an image is being added to the editor successfully.
          *
          * @event imageAdd
-         * @param {CKEDITOR.dom.element} el The created image with src as Data URI.
+         * @param {CKEDITOR.dom.element} el The created image with src as Data URI
+         * @param {File} file The image file
          */
     });
 

@@ -5,13 +5,14 @@
      * The ButtonItalic class provides functionality for styling an selection with italic (em) style.
      *
      * @uses ButtonCommand
+     * @uses ButtonKeystroke
      * @uses ButtonStateClasses
      * @uses ButtonStyle
      *
      * @class ButtonItalic
      */
     var ButtonItalic = React.createClass({
-        mixins: [AlloyEditor.ButtonStyle, AlloyEditor.ButtonStateClasses, AlloyEditor.ButtonCommand],
+        mixins: [AlloyEditor.ButtonStyle, AlloyEditor.ButtonStateClasses, AlloyEditor.ButtonCommand, AlloyEditor.ButtonKeystroke],
 
         // Allows validating props being passed to the component.
         propTypes: {
@@ -59,9 +60,11 @@
         getDefaultProps: function() {
             return {
                 command: 'italic',
-                style: {
-                    element: 'em'
-                }
+                keystroke: {
+                    fn: 'execCommand',
+                    keys: CKEDITOR.CTRL + 73 /*I*/
+                },
+                style: 'coreStyles_italic'
             };
         },
 

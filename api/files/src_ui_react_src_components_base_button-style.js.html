@@ -31,7 +31,7 @@
                 <li class="divider-vertical"></li>
                 <li>
                     <p class="navbar-text">
-                        API Docs for Version: <b>0.7.0</b>
+                        API Docs for Version: <b>1.2.3</b>
                     </p>
                 </li>
             </div>
@@ -63,11 +63,15 @@
                                     <li><a href="../classes/ButtonBold.html">ButtonBold</a></li>
                                     <li><a href="../classes/ButtonCamera.html">ButtonCamera</a></li>
                                     <li><a href="../classes/ButtonCameraImage.html">ButtonCameraImage</a></li>
+                                    <li><a href="../classes/ButtonCfgProps.html">ButtonCfgProps</a></li>
                                     <li><a href="../classes/ButtonCode.html">ButtonCode</a></li>
                                     <li><a href="../classes/ButtonCommand.html">ButtonCommand</a></li>
+                                    <li><a href="../classes/ButtonCommandActive.html">ButtonCommandActive</a></li>
                                     <li><a href="../classes/ButtonCommandListItem.html">ButtonCommandListItem</a></li>
                                     <li><a href="../classes/ButtonCommandsList.html">ButtonCommandsList</a></li>
                                     <li><a href="../classes/ButtonDropdown.html">ButtonDropdown</a></li>
+                                    <li><a href="../classes/ButtonEmbed.html">ButtonEmbed</a></li>
+                                    <li><a href="../classes/ButtonEmbedEdit.html">ButtonEmbedEdit</a></li>
                                     <li><a href="../classes/ButtonH1.html">ButtonH1</a></li>
                                     <li><a href="../classes/ButtonH2.html">ButtonH2</a></li>
                                     <li><a href="../classes/ButtonHline.html">ButtonHline</a></li>
@@ -75,11 +79,15 @@
                                     <li><a href="../classes/ButtonImageAlignCenter.html">ButtonImageAlignCenter</a></li>
                                     <li><a href="../classes/ButtonImageAlignLeft.html">ButtonImageAlignLeft</a></li>
                                     <li><a href="../classes/ButtonImageAlignRight.html">ButtonImageAlignRight</a></li>
+                                    <li><a href="../classes/ButtonIndentBlock.html">ButtonIndentBlock</a></li>
                                     <li><a href="../classes/ButtonItalic.html">ButtonItalic</a></li>
+                                    <li><a href="../classes/ButtonKeystroke.html">ButtonKeystroke</a></li>
                                     <li><a href="../classes/ButtonLink.html">ButtonLink</a></li>
+                                    <li><a href="../classes/ButtonLinkAutocompleteList.html">ButtonLinkAutocompleteList</a></li>
                                     <li><a href="../classes/ButtonLinkEdit.html">ButtonLinkEdit</a></li>
                                     <li><a href="../classes/ButtonLinkTargetEdit.html">ButtonLinkTargetEdit</a></li>
                                     <li><a href="../classes/ButtonOrderedList.html">ButtonOrderedList</a></li>
+                                    <li><a href="../classes/ButtonOutdentBlock.html">ButtonOutdentBlock</a></li>
                                     <li><a href="../classes/ButtonParagraphAlignLeft.html">ButtonParagraphAlignLeft</a></li>
                                     <li><a href="../classes/ButtonParagraphAlignRight.html">ButtonParagraphAlignRight</a></li>
                                     <li><a href="../classes/ButtonParagraphCenter.html">ButtonParagraphCenter</a></li>
@@ -103,6 +111,7 @@
                                     <li><a href="../classes/ButtonTableHeading.html">ButtonTableHeading</a></li>
                                     <li><a href="../classes/ButtonTableRemove.html">ButtonTableRemove</a></li>
                                     <li><a href="../classes/ButtonTableRow.html">ButtonTableRow</a></li>
+                                    <li><a href="../classes/ButtonTargetList.html">ButtonTargetList</a></li>
                                     <li><a href="../classes/ButtonTwitter.html">ButtonTwitter</a></li>
                                     <li><a href="../classes/ButtonUnderline.html">ButtonUnderline</a></li>
                                     <li><a href="../classes/ButtonUnorderedlist.html">ButtonUnorderedlist</a></li>
@@ -184,11 +193,18 @@
                                     // Allows validating props being passed to the component.
                                     propTypes: {
                                         /**
-                                         * The style the button should handle as described by http://docs.ckeditor.com/#!/api/CKEDITOR.style
+                                         * The style the button should handle. Allowed values are:
+                                         * - Object as described by http://docs.ckeditor.com/#!/api/CKEDITOR.style.
+                                         * - String pointing to an object inside the editor instance configuration. For example, &#x60;style = &#x27;coreStyles_bold&#x27;&#x60; will try to
+                                         * retrieve the style object from &#x60;editor.config.coreStyles_bold&#x60;. Nested properties such as &#x60;style = &#x27;myplugin.myConfig.myStyle&#x27;&#x60;
+                                         * are also supported and will try to retrieve the style object from the editor configuration as well.
                                          *
-                                         * @property {Object} style
+                                         * @property {Object|String} style
                                          */
-                                        style: React.PropTypes.object
+                                        style: React.PropTypes.oneOfType([
+                                            React.PropTypes.object,
+                                            React.PropTypes.string
+                                        ])
                                     },
                             
                                     /**
@@ -197,7 +213,25 @@
                                      * @method componentWillMount
                                      */
                                     componentWillMount: function() {
-                                        this._style = new CKEDITOR.style(this.props.style);
+                                        var Lang = AlloyEditor.Lang;
+                                        var style = this.props.style;
+                            
+                                        if (Lang.isString(style)) {
+                                            var parts = style.split(&#x27;.&#x27;);
+                                            var currentMember = this.props.editor.get(&#x27;nativeEditor&#x27;).config;
+                                            var property = parts.shift();
+                            
+                                            while (property &amp;&amp; Lang.isObject(currentMember) &amp;&amp; Lang.isObject(currentMember[property])) {
+                                                currentMember = currentMember[property];
+                                                property = parts.shift();
+                                            }
+                            
+                                            if (Lang.isObject(currentMember)) {
+                                                style = currentMember;
+                                            }
+                                        }
+                            
+                                        this._style = new CKEDITOR.style(style);
                                     },
                             
                                     /**

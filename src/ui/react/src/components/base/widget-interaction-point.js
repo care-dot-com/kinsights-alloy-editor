@@ -41,9 +41,10 @@
             }
 
             var selectionData = eventPayload.selectionData;
+
             var pos = {
                 x: eventPayload.nativeEvent.pageX,
-                y: eventPayload.nativeEvent.pageY
+                y: selectionData.region.top
             };
 
             var direction = selectionData.region.direction;

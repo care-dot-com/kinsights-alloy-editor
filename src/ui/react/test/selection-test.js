@@ -56,7 +56,22 @@
                 assert.isFalse(linkTest(payload));
             });
 
-            it('should detect the link', function() {
+            it('should detect the link at the edit start position', function() {
+                var nativeEditor = this.editor.get('nativeEditor');
+
+                var link = nativeEditor.element.findOne('#editable');
+
+                var range = nativeEditor.createRange();
+                range.moveToElementEditStart(link);
+
+                nativeEditor.getSelection().selectRanges([range]);
+
+                var payload = getPayload.call(this, link);
+
+                assert.isTrue(linkTest(payload));
+            });
+
+            it('should not detect the link at the edit end position', function() {
                 var nativeEditor = this.editor.get('nativeEditor');
 
                 var link = nativeEditor.element.findOne('#editable');
@@ -68,7 +83,7 @@
 
                 var payload = getPayload.call(this, link);
 
-                assert.isTrue(linkTest(payload));
+                assert.isFalse(linkTest(payload));
             });
 
             it('should handle non editable link', function() {
@@ -211,6 +226,52 @@
 
                 nativeEditor.getSelection().selectElement(notTable);
                 assert.isFalse(tableTest(payload));
+            });
+        });
+
+        describe('embed', function() {
+            var embedTest = AlloyEditor.SelectionTest.embed;
+
+            beforeEach(function() {
+                var content = '<div id="embed" data-ae-embed-url="#" data-cke-widget-upcasted="1" data-widget="ae_embed" class="cke_widget_element">http//alloyeditor.com/demo/</div>';
+
+                content += '<div id="not_ae_embed" data-ae-embed-url="#" data-cke-widget-upcasted="1" data-widget="not_ae_embed" class="cke_widget_element">http//alloyeditor.com/demo/</div>';
+                content += '<p id="not-embed">Not a embed</p>';
+
+                this.editor.get('nativeEditor').setData(content);
+            });
+
+            it('should detect a embed', function() {
+                var nativeEditor = this.editor.get('nativeEditor');
+
+                var embed = nativeEditor.element.findOne('#embed');
+
+                var payload = getPayload.call(this, embed);
+
+                nativeEditor.getSelection().selectElement(embed);
+                assert.isTrue(embedTest(payload));
+            });
+
+            it('should handle non data-widget embed', function() {
+                var nativeEditor = this.editor.get('nativeEditor');
+
+                var notEmbed = nativeEditor.element.findOne('#not_ae_embed');
+
+                var payload = getPayload.call(this, notEmbed);
+
+                nativeEditor.getSelection().selectElement(notEmbed);
+                assert.isFalse(embedTest(payload));
+            });
+
+            it('should handle not embed selection', function() {
+                var nativeEditor = this.editor.get('nativeEditor');
+
+                var notEmbed = nativeEditor.element.findOne('#not-embed');
+
+                var payload = getPayload.call(this, notEmbed);
+
+                nativeEditor.getSelection().selectElement(notEmbed);
+                assert.isFalse(embedTest(payload));
             });
         });
     });

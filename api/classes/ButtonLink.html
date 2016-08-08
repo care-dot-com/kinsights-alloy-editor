@@ -31,7 +31,7 @@
                 <li class="divider-vertical"></li>
                 <li>
                     <p class="navbar-text">
-                        API Docs for Version: <b>0.7.0</b>
+                        API Docs for Version: <b>1.2.3</b>
                     </p>
                 </li>
             </div>
@@ -63,11 +63,15 @@
                                     <li><a href="../classes/ButtonBold.html">ButtonBold</a></li>
                                     <li><a href="../classes/ButtonCamera.html">ButtonCamera</a></li>
                                     <li><a href="../classes/ButtonCameraImage.html">ButtonCameraImage</a></li>
+                                    <li><a href="../classes/ButtonCfgProps.html">ButtonCfgProps</a></li>
                                     <li><a href="../classes/ButtonCode.html">ButtonCode</a></li>
                                     <li><a href="../classes/ButtonCommand.html">ButtonCommand</a></li>
+                                    <li><a href="../classes/ButtonCommandActive.html">ButtonCommandActive</a></li>
                                     <li><a href="../classes/ButtonCommandListItem.html">ButtonCommandListItem</a></li>
                                     <li><a href="../classes/ButtonCommandsList.html">ButtonCommandsList</a></li>
                                     <li><a href="../classes/ButtonDropdown.html">ButtonDropdown</a></li>
+                                    <li><a href="../classes/ButtonEmbed.html">ButtonEmbed</a></li>
+                                    <li><a href="../classes/ButtonEmbedEdit.html">ButtonEmbedEdit</a></li>
                                     <li><a href="../classes/ButtonH1.html">ButtonH1</a></li>
                                     <li><a href="../classes/ButtonH2.html">ButtonH2</a></li>
                                     <li><a href="../classes/ButtonHline.html">ButtonHline</a></li>
@@ -75,11 +79,15 @@
                                     <li><a href="../classes/ButtonImageAlignCenter.html">ButtonImageAlignCenter</a></li>
                                     <li><a href="../classes/ButtonImageAlignLeft.html">ButtonImageAlignLeft</a></li>
                                     <li><a href="../classes/ButtonImageAlignRight.html">ButtonImageAlignRight</a></li>
+                                    <li><a href="../classes/ButtonIndentBlock.html">ButtonIndentBlock</a></li>
                                     <li><a href="../classes/ButtonItalic.html">ButtonItalic</a></li>
+                                    <li><a href="../classes/ButtonKeystroke.html">ButtonKeystroke</a></li>
                                     <li><a href="../classes/ButtonLink.html">ButtonLink</a></li>
+                                    <li><a href="../classes/ButtonLinkAutocompleteList.html">ButtonLinkAutocompleteList</a></li>
                                     <li><a href="../classes/ButtonLinkEdit.html">ButtonLinkEdit</a></li>
                                     <li><a href="../classes/ButtonLinkTargetEdit.html">ButtonLinkTargetEdit</a></li>
                                     <li><a href="../classes/ButtonOrderedList.html">ButtonOrderedList</a></li>
+                                    <li><a href="../classes/ButtonOutdentBlock.html">ButtonOutdentBlock</a></li>
                                     <li><a href="../classes/ButtonParagraphAlignLeft.html">ButtonParagraphAlignLeft</a></li>
                                     <li><a href="../classes/ButtonParagraphAlignRight.html">ButtonParagraphAlignRight</a></li>
                                     <li><a href="../classes/ButtonParagraphCenter.html">ButtonParagraphCenter</a></li>
@@ -103,6 +111,7 @@
                                     <li><a href="../classes/ButtonTableHeading.html">ButtonTableHeading</a></li>
                                     <li><a href="../classes/ButtonTableRemove.html">ButtonTableRemove</a></li>
                                     <li><a href="../classes/ButtonTableRow.html">ButtonTableRow</a></li>
+                                    <li><a href="../classes/ButtonTargetList.html">ButtonTargetList</a></li>
                                     <li><a href="../classes/ButtonTwitter.html">ButtonTwitter</a></li>
                                     <li><a href="../classes/ButtonUnderline.html">ButtonUnderline</a></li>
                                     <li><a href="../classes/ButtonUnorderedlist.html">ButtonUnorderedlist</a></li>
@@ -173,7 +182,9 @@
                                     <div class="uses">
                                         Uses:
                                         <ul class="inline commas">
+                                                <li><a href="ButtonKeystroke.html">ButtonKeystroke</a></li>
                                                 <li><a href="ButtonStateClasses.html">ButtonStateClasses</a></li>
+                                                <li><a href="ButtonCfgProps.html">ButtonCfgProps</a></li>
                                         </ul>
                                     </div>
                             
@@ -213,12 +224,32 @@
                                                 <h3>Methods</h3>
                             
                                                 <ul class="index-list methods">
+                                                        <li class="index-item method protected">
+                                                            <a href="#method__requestExclusive">_requestExclusive</a>
+                            
+                                                        </li>
+                                                        <li class="index-item method inherited">
+                                                            <a href="#method_componentWillMount">componentWillMount</a>
+                            
+                                                        </li>
+                                                        <li class="index-item method inherited">
+                                                            <a href="#method_componentWillUnmount">componentWillUnmount</a>
+                            
+                                                        </li>
+                                                        <li class="index-item method">
+                                                            <a href="#method_getDefaultProps">getDefaultProps</a>
+                            
+                                                        </li>
                                                         <li class="index-item method inherited">
                                                             <a href="#method_getStateClasses">getStateClasses</a>
                             
                                                         </li>
                                                         <li class="index-item method">
                                                             <a href="#method_isActive">isActive</a>
+                            
+                                                        </li>
+                                                        <li class="index-item method inherited">
+                                                            <a href="#method_mergeButtonCfgProps">mergeButtonCfgProps</a>
                             
                                                         </li>
                                                         <li class="index-item method">
@@ -232,7 +263,7 @@
                                                 <h3>Properties</h3>
                             
                                                 <ul class="index-list properties">
-                                                        <li class="index-item property">
+                                                        <li class="index-item property inherited">
                                                             <a href="#property_editor">editor</a>
                             
                                                         </li>
@@ -240,6 +271,10 @@
                                                             <a href="#property_key">key</a>
                             
                                                                 <span class="flag static">static</span>
+                                                        </li>
+                                                        <li class="index-item property inherited">
+                                                            <a href="#property_keystroke">keystroke</a>
+                            
                                                         </li>
                                                         <li class="index-item property">
                                                             <a href="#property_label">label</a>
@@ -258,6 +293,139 @@
                                         <div id="methods" class="api-class-tabpanel tab-pane">
                                             <h2 class="off-left">Methods</h2>
                             
+                                                <div id="method__requestExclusive" class="method item protected">
+                                                    <h3 class="name"><code>_requestExclusive</code></h3>
+                                                
+                                                        <span class="paren">()</span>
+                                                
+                                                
+                                                
+                                                        <span class="flag protected">protected</span>
+                                                
+                                                
+                                                
+                                                
+                                                
+                                                    <div class="meta">
+                                                                <p>
+                                                                Defined in
+                                                        <a href="../files/src_ui_react_src_components_buttons_button-link.jsx.html#l106"><code>src&#x2F;ui&#x2F;react&#x2F;src&#x2F;components&#x2F;buttons&#x2F;button-link.jsx:106</code></a>
+                                                        </p>
+                                                
+                                                
+                                                
+                                                    </div>
+                                                
+                                                    <div class="description">
+                                                        <p>Requests the link button to be rendered in exclusive mode to allow the creation of a link.</p>
+                                                
+                                                    </div>
+                                                
+                                                
+                                                
+                                                </div>
+                                                <div id="method_componentWillMount" class="method item inherited">
+                                                    <h3 class="name"><code>componentWillMount</code></h3>
+                                                
+                                                        <span class="paren">()</span>
+                                                
+                                                
+                                                
+                                                
+                                                
+                                                
+                                                
+                                                
+                                                    <div class="meta">
+                                                                <p>Inherited from
+                                                                <a href="../classes/ButtonKeystroke.html#method_componentWillMount">ButtonKeystroke</a>:
+                                                        <a href="../files/src_ui_react_src_components_base_button-keystroke.js.html#l24"><code>src&#x2F;ui&#x2F;react&#x2F;src&#x2F;components&#x2F;base&#x2F;button-keystroke.js:24</code></a>
+                                                        </p>
+                                                
+                                                
+                                                
+                                                    </div>
+                                                
+                                                    <div class="description">
+                                                        <p>Lifecycle. Invoked once, both on the client and server, immediately before the initial rendering occurs.</p>
+                                                
+                                                    </div>
+                                                
+                                                
+                                                
+                                                </div>
+                                                <div id="method_componentWillUnmount" class="method item inherited">
+                                                    <h3 class="name"><code>componentWillUnmount</code></h3>
+                                                
+                                                        <span class="paren">()</span>
+                                                
+                                                
+                                                
+                                                
+                                                
+                                                
+                                                
+                                                
+                                                    <div class="meta">
+                                                                <p>Inherited from
+                                                                <a href="../classes/ButtonKeystroke.html#method_componentWillUnmount">ButtonKeystroke</a>:
+                                                        <a href="../files/src_ui_react_src_components_base_button-keystroke.js.html#l59"><code>src&#x2F;ui&#x2F;react&#x2F;src&#x2F;components&#x2F;base&#x2F;button-keystroke.js:59</code></a>
+                                                        </p>
+                                                
+                                                
+                                                
+                                                    </div>
+                                                
+                                                    <div class="description">
+                                                        <p>Lifecycle. Invoked immediately before a component is unmounted from the DOM.</p>
+                                                
+                                                    </div>
+                                                
+                                                
+                                                
+                                                </div>
+                                                <div id="method_getDefaultProps" class="method item">
+                                                    <h3 class="name"><code>getDefaultProps</code></h3>
+                                                
+                                                        <span class="paren">()</span>
+                                                
+                                                        <span class="returns-inline">
+                                                            <span class="type">Object</span>
+                                                        </span>
+                                                
+                                                
+                                                
+                                                
+                                                
+                                                
+                                                
+                                                    <div class="meta">
+                                                                <p>
+                                                                Defined in
+                                                        <a href="../files/src_ui_react_src_components_buttons_button-link.jsx.html#l57"><code>src&#x2F;ui&#x2F;react&#x2F;src&#x2F;components&#x2F;buttons&#x2F;button-link.jsx:57</code></a>
+                                                        </p>
+                                                
+                                                
+                                                
+                                                    </div>
+                                                
+                                                    <div class="description">
+                                                        <p>Lifecycle. Returns the default values of the properties used in the widget.</p>
+                                                
+                                                    </div>
+                                                
+                                                
+                                                        <div class="returns">
+                                                            <h4>Returns:</h4>
+                                                
+                                                            <div class="returns-description">
+                                                                        <span class="type">Object</span>:
+                                                                    <p>The default properties.</p>
+                                                
+                                                            </div>
+                                                        </div>
+                                                
+                                                </div>
                                                 <div id="method_getStateClasses" class="method item inherited">
                                                     <h3 class="name"><code>getStateClasses</code></h3>
                                                 
@@ -319,7 +487,7 @@
                                                     <div class="meta">
                                                                 <p>
                                                                 Defined in
-                                                        <a href="../files/src_ui_react_src_components_buttons_button-link.jsx.html#l55"><code>src&#x2F;ui&#x2F;react&#x2F;src&#x2F;components&#x2F;buttons&#x2F;button-link.jsx:55</code></a>
+                                                        <a href="../files/src_ui_react_src_components_buttons_button-link.jsx.html#l72"><code>src&#x2F;ui&#x2F;react&#x2F;src&#x2F;components&#x2F;buttons&#x2F;button-link.jsx:72</code></a>
                                                         </p>
                                                 
                                                 
@@ -343,6 +511,73 @@
                                                         </div>
                                                 
                                                 </div>
+                                                <div id="method_mergeButtonCfgProps" class="method item inherited">
+                                                    <h3 class="name"><code>mergeButtonCfgProps</code></h3>
+                                                
+                                                        <div class="args">
+                                                            <span class="paren">(</span><ul class="args-list inline commas">
+                                                                <li class="arg">
+                                                                        <code>props</code>
+                                                                </li>
+                                                            </ul><span class="paren">)</span>
+                                                        </div>
+                                                
+                                                        <span class="returns-inline">
+                                                            <span class="type">Object</span>
+                                                        </span>
+                                                
+                                                
+                                                
+                                                
+                                                
+                                                
+                                                
+                                                    <div class="meta">
+                                                                <p>Inherited from
+                                                                <a href="../classes/ButtonCfgProps.html#method_mergeButtonCfgProps">ButtonCfgProps</a>:
+                                                        <a href="../files/src_ui_react_src_components_base_button-props.js.html#l21"><code>src&#x2F;ui&#x2F;react&#x2F;src&#x2F;components&#x2F;base&#x2F;button-props.js:21</code></a>
+                                                        </p>
+                                                
+                                                
+                                                
+                                                    </div>
+                                                
+                                                    <div class="description">
+                                                        <p>Merges the properties, passed to the current component with user&#39;s configuration
+                                                via <code>buttonCfg</code> property.</p>
+                                                
+                                                    </div>
+                                                
+                                                        <div class="params">
+                                                            <h4>Parameters:</h4>
+                                                
+                                                            <ul class="params-list">
+                                                                <li class="param">
+                                                                        <code class="param-name">props</code>
+                                                                        <span class="type">Object</span>
+                                                
+                                                
+                                                                    <div class="param-description">
+                                                                        <p>The properties to be merged with the provided configuration for this
+                                                button. If not passed, the user configuration will be merged with <code>this.props</code></p>
+                                                
+                                                                    </div>
+                                                
+                                                                </li>
+                                                            </ul>
+                                                        </div>
+                                                
+                                                        <div class="returns">
+                                                            <h4>Returns:</h4>
+                                                
+                                                            <div class="returns-description">
+                                                                        <span class="type">Object</span>:
+                                                                    <p>The merged properties</p>
+                                                
+                                                            </div>
+                                                        </div>
+                                                
+                                                </div>
                                                 <div id="method_render" class="method item">
                                                     <h3 class="name"><code>render</code></h3>
                                                 
@@ -361,7 +596,7 @@
                                                     <div class="meta">
                                                                 <p>
                                                                 Defined in
-                                                        <a href="../files/src_ui_react_src_components_buttons_button-link.jsx.html#l65"><code>src&#x2F;ui&#x2F;react&#x2F;src&#x2F;components&#x2F;buttons&#x2F;button-link.jsx:65</code></a>
+                                                        <a href="../files/src_ui_react_src_components_buttons_button-link.jsx.html#l82"><code>src&#x2F;ui&#x2F;react&#x2F;src&#x2F;components&#x2F;buttons&#x2F;button-link.jsx:82</code></a>
                                                         </p>
                                                 
                                                 
@@ -399,9 +634,12 @@
                                                 
                                                 
                                                     <div class="meta">
-                                                                <p>
-                                                                Defined in
-                                                        <a href="../files/src_ui_react_src_components_buttons_button-link.jsx.html#l20"><code>src&#x2F;ui&#x2F;react&#x2F;src&#x2F;components&#x2F;buttons&#x2F;button-link.jsx:20</code></a>
+                                                            <p>Inherited from
+                                                            <a href="../classes/ButtonCfgProps.html#property_editor">
+                                                                ButtonCfgProps
+                                                            </a>
+                                                            but overwritten in
+                                                        <a href="../files/src_ui_react_src_components_buttons_button-link.jsx.html#l22"><code>src&#x2F;ui&#x2F;react&#x2F;src&#x2F;components&#x2F;buttons&#x2F;button-link.jsx:22</code></a>
                                                         </p>
                                                 
                                                 
@@ -427,7 +665,7 @@
                                                     <div class="meta">
                                                                 <p>
                                                                 Defined in
-                                                        <a href="../files/src_ui_react_src_components_buttons_button-link.jsx.html#l45"><code>src&#x2F;ui&#x2F;react&#x2F;src&#x2F;components&#x2F;buttons&#x2F;button-link.jsx:45</code></a>
+                                                        <a href="../files/src_ui_react_src_components_buttons_button-link.jsx.html#l47"><code>src&#x2F;ui&#x2F;react&#x2F;src&#x2F;components&#x2F;buttons&#x2F;button-link.jsx:47</code></a>
                                                         </p>
                                                 
                                                 
@@ -442,6 +680,37 @@
                                                 
                                                 
                                                 </div>
+                                                <div id="property_keystroke" class="property item inherited">
+                                                    <h3 class="name"><code>keystroke</code></h3>
+                                                    <span class="type">Object</span>
+                                                
+                                                
+                                                
+                                                
+                                                
+                                                    <div class="meta">
+                                                                <p>Inherited from
+                                                                <a href="../classes/ButtonKeystroke.html#property_keystroke">ButtonKeystroke</a>:
+                                                        <a href="../files/src_ui_react_src_components_base_button-keystroke.js.html#l13"><code>src&#x2F;ui&#x2F;react&#x2F;src&#x2F;components&#x2F;base&#x2F;button-keystroke.js:13</code></a>
+                                                        </p>
+                                                
+                                                
+                                                    </div>
+                                                
+                                                    <div class="description">
+                                                        <p><p>The keystroke definition. An object with the following properties:</p></p>
+                                                <ul>
+                                                <li>fn: The function to be executed</li>
+                                                <li>keys: The keystroke definition, as expected by <a href="http://docs.ckeditor.com/#!/api/CKEDITOR.editor-method-setKeystroke">http://docs.ckeditor.com/#!/api/CKEDITOR.editor-method-setKeystroke</a></li>
+                                                <li>name: The name for the CKEditor command that will be created. If empty,
+                                                a random name will be created on the fly</li>
+                                                </ul>
+                                                
+                                                    </div>
+                                                
+                                                
+                                                
+                                                </div>
                                                 <div id="property_label" class="property item">
                                                     <h3 class="name"><code>label</code></h3>
                                                     <span class="type">String</span>
@@ -453,7 +722,7 @@
                                                     <div class="meta">
                                                                 <p>
                                                                 Defined in
-                                                        <a href="../files/src_ui_react_src_components_buttons_button-link.jsx.html#l27"><code>src&#x2F;ui&#x2F;react&#x2F;src&#x2F;components&#x2F;buttons&#x2F;button-link.jsx:27</code></a>
+                                                        <a href="../files/src_ui_react_src_components_buttons_button-link.jsx.html#l29"><code>src&#x2F;ui&#x2F;react&#x2F;src&#x2F;components&#x2F;buttons&#x2F;button-link.jsx:29</code></a>
                                                         </p>
                                                 
                                                 
@@ -478,7 +747,7 @@
                                                     <div class="meta">
                                                                 <p>
                                                                 Defined in
-                                                        <a href="../files/src_ui_react_src_components_buttons_button-link.jsx.html#l34"><code>src&#x2F;ui&#x2F;react&#x2F;src&#x2F;components&#x2F;buttons&#x2F;button-link.jsx:34</code></a>
+                                                        <a href="../files/src_ui_react_src_components_buttons_button-link.jsx.html#l36"><code>src&#x2F;ui&#x2F;react&#x2F;src&#x2F;components&#x2F;buttons&#x2F;button-link.jsx:36</code></a>
                                                         </p>
                                                 
                                                 

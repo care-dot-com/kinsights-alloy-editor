@@ -71,13 +71,6 @@
 
                 var uiTasksTimeout = editor.config.uicore ? editor.config.uicore.timeout : 50;
 
-                var handleAria = CKEDITOR.tools.debounce(
-                    function(event) {
-                        ariaElement.innerHTML = ariaState.join('. ');
-                    },
-                    uiTasksTimeout
-                );
-
                 var handleUI = CKEDITOR.tools.debounce(
                     function(event) {
                         ariaState = [];
@@ -96,6 +89,44 @@
                     uiTasksTimeout
                 );
 
+                var handleAria = CKEDITOR.tools.debounce(
+                    function(event) {
+                        ariaElement.innerHTML = ariaState.join('. ');
+                    },
+                    uiTasksTimeout
+                );
+
+                var handleMouseLeave = CKEDITOR.tools.debounce(
+                    function(event) {
+                        var aeUINodes = document.querySelectorAll('.ae-ui');
+
+                        var found;
+
+                        for (var i = 0; i < aeUINodes.length; i++) {
+                            if (aeUINodes[i].contains(event.data.$.relatedTarget)) {
+                                found = true;
+                                break;
+                            }
+                        }
+
+                        if (!found) {
+                            handleUI(event);
+                        }
+                    },
+                    uiTasksTimeout
+                );
+
+                var handleBlur = function(event) {
+                    var editable = editor.editable();
+
+                    editable.removeListener('blur', handleBlur);
+                    editable.removeListener('keyup', handleUI);
+                    editable.removeListener('mouseleave', handleMouseLeave);
+                    editable.removeListener('mouseup', handleUI);
+
+                    handleUI(event);
+                };
+
                 editor.on('ariaUpdate', function(event) {
                     // handleAria is debounced function, so if it is being called multiple times, it will
                     // be canceled until some time passes.
@@ -111,8 +142,14 @@
                 editor.once('contentDom', function() {
                     var editable = editor.editable();
 
-                    editable.attachListener(editable, 'mouseup', handleUI);
-                    editable.attachListener(editable, 'keyup', handleUI);
+                    editable.attachListener(editable, 'focus', function (event) {
+                        editable.attachListener(editable, 'blur', handleBlur);
+                        editable.attachListener(editable, 'keyup', handleUI);
+                        editable.attachListener(editable, 'mouseup', handleUI);
+                        editable.attachListener(editable, 'mouseleave', handleMouseLeave);
+
+                        handleUI(event);
+                    });
                 });
 
                 editor.on('destroy', function(event) {

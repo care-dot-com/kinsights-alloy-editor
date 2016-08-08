@@ -21,6 +21,9 @@ AlloyEditor.Strings = {
 	h2: CKEDITOR.lang['{lang}'].format.tag_h2,
 	normal: CKEDITOR.lang['{lang}'].format.tag_p,
 
+	indent: CKEDITOR.lang['{lang}'].indent.indent,
+	outdent: CKEDITOR.lang['{lang}'].indent.outdent,
+
 	blockStyles: CKEDITOR.lang['{lang}'].stylescombo.panelTitle1,
 	inlineStyles: CKEDITOR.lang['{lang}'].stylescombo.panelTitle2,
 	objectStyles: CKEDITOR.lang['{lang}'].stylescombo.panelTitle3,
@@ -56,10 +59,12 @@ AlloyEditor.Strings = {
 	ariaUpdateOneToolbar: '{toolbars} toolbar is available. Press ALT+F10 to focus.',
 	ariaUpdateManyToolbars: '{toolbars} toolbars are available. Press ALT+F10 to focus.',
 	camera: 'Insert Image from Camera',
+	cameraDisabled: 'The browser does not support this action, or it is available on https only (Chrome).',
 	cite: 'Cite',
 	code: 'Code',
 	clearInput: 'Clear Input Field',
 	confirm: 'Confirm',
+	deleteEmbed: 'Delete embed',
 	editLink: 'Type or paste link here',
 	image: 'Insert Image',
 	link: 'Link',
